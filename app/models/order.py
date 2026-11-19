@@ -1,0 +1,79 @@
+from datetime import datetime, timezone
+from enum import Enum
+
+from sqlalchemy import CheckConstraint, ForeignKey, String
+from sqlalchemy.orm import Mapped, mapped_column ,relationship
+
+from app.db.base import Base
+
+
+class OrderStatus(str, Enum):
+    PENDING = "Pending"
+    RESERVED = "Reserved"
+    PAID = "Paid"
+    CANCELLED = "Cancelled"
+    EXPIRED = "Expired"
+    FAILED = "Failed"
+
+
+class Order(Base):
+    __tablename__ = "orders"
+
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('Pending', 'Reserved', 'Paid', 'Cancelled', 'Expired', 'Failed')",
+            name="ck_orders_status_valid",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    cart_id: Mapped[int] = mapped_column(
+        ForeignKey("carts.id"),
+        nullable=False,
+        unique=True,
+    )
+
+    status: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default=OrderStatus.PENDING.value,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    completed_at: Mapped[datetime | None] = mapped_column(
+        nullable=True,
+        default=None,
+    )
+
+    user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        default=None,
+        index=True,
+    )
+
+    user: Mapped["User | None"] = relationship(
+        back_populates="orders",
+    )
+
+    items: Mapped[list["OrderItem"]] = relationship(
+        back_populates="order",
+        cascade="all, delete-orphan",
+    )
+
+    reservation: Mapped["Reservation | None"] = relationship(
+        back_populates="order",
+        cascade="all, delete-orphan",
+        uselist=False,
+    )
+
+    payment: Mapped["Payment | None"] = relationship(
+        back_populates="order",
+        cascade="all, delete-orphan",
+        uselist=False,
+    )
