@@ -119,6 +119,24 @@ def update_user(
                 detail="You cannot demote your own account.",
             )
 
+    # Last-manager protection: Ensure the organization retains at least one active manager
+    is_demoting = data.role is not None and data.role != UserRole.MANAGER.value and target_user.role == UserRole.MANAGER.value
+    is_deactivating = data.is_active is False and target_user.is_active and target_user.role == UserRole.MANAGER.value
+    if is_demoting or is_deactivating:
+        active_managers_count = (
+            db.query(User)
+            .filter(
+                User.role == UserRole.MANAGER.value,
+                User.is_active.is_(True),
+            )
+            .count()
+        )
+        if active_managers_count <= 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot deactivate or demote the last remaining active manager.",
+            )
+
     if data.display_name is not None:
         target_user.display_name = data.display_name.strip()
 
@@ -184,6 +202,22 @@ def delete_user(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="You cannot delete your own account.",
         )
+
+    # Last-manager protection: Ensure the organization retains at least one active manager
+    if target_user.role == UserRole.MANAGER.value and target_user.is_active:
+        active_managers_count = (
+            db.query(User)
+            .filter(
+                User.role == UserRole.MANAGER.value,
+                User.is_active.is_(True),
+            )
+            .count()
+        )
+        if active_managers_count <= 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot delete the last remaining active manager.",
+            )
 
     db.delete(target_user)
     db.commit()

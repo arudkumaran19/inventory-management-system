@@ -11,6 +11,10 @@ class ProductRepository:
     def get_by_id(self, product_id: int) -> Product | None:
         return self.db.get(Product, product_id)
 
+    def get_by_name(self, name: str) -> Product | None:
+        statement = select(Product).where(Product.name.ilike(name))
+        return self.db.scalars(statement).first()
+
     def get_all(self) -> list[Product]:
         statement = select(Product).order_by(Product.id)
         return list(self.db.scalars(statement).all())

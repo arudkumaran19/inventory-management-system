@@ -97,6 +97,8 @@ def isolate():
     yield
     with _db() as db:
         _clean(db)
+    # Restore demo users so development database and manual testers never lose demo accounts
+    _run_seed("true")
 
 
 # ---------------------------------------------------------------------------

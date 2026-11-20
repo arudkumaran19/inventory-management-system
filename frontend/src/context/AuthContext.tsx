@@ -77,6 +77,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setError(null)
         try {
             const response = await apiLogin(email, password)
+            // Flush any stale cart/checkout state from previous operator session
+            try {
+                POS_STORAGE_KEYS.forEach((key) => sessionStorage.removeItem(key))
+            } catch {
+                // Ignore storage errors in private browsing
+            }
             setUser(response.user)
         } catch (err) {
             const message = err instanceof Error ? err.message : "Authentication failed"

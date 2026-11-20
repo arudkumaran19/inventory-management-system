@@ -21,7 +21,7 @@ class CheckoutService:
         self.inventory = InventoryRepository(db)
         self.orders = OrderRepository(db)
 
-    def checkout(self, cart_id: int) -> Order:
+    def checkout(self, cart_id: int, user_id: int | None = None) -> Order:
         # Lock the cart so two checkout requests cannot
         # simultaneously create an order for the same cart.
         cart = self.db.scalars(
@@ -108,6 +108,8 @@ class CheckoutService:
         now = datetime.now(timezone.utc)
         order = self.orders.create(cart_id=cart.id)
         order.created_at = now
+        if user_id is not None:
+            order.user_id = user_id
 
         for cart_item, product in locked_products:
             self.orders.add_item(

@@ -1,7 +1,9 @@
 from fastapi import HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.models.product import Product
 from app.repositories.product import ProductRepository
 from app.schemas.product import ProductCreate, ProductUpdate
 
@@ -12,8 +14,9 @@ class ProductService:
         self.db = db
 
     def create_product(self, data: ProductCreate):
+        cleaned_name = data.name.strip()
         product = self.repository.create(
-            name=data.name,
+            name=cleaned_name,
             price=data.price,
             available_stock=data.available_stock,
         )
@@ -45,6 +48,9 @@ class ProductService:
         product = self.get_product(product_id)
 
         update_data = data.model_dump(exclude_unset=True)
+
+        if "name" in update_data and update_data["name"] is not None:
+            update_data["name"] = update_data["name"].strip()
 
         for field, value in update_data.items():
             setattr(product, field, value)

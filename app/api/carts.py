@@ -45,12 +45,10 @@ def checkout(
     db: Session = Depends(get_db),
 ):
     service = CheckoutService(db)
-
-    order = service.checkout(cart_id)
-    if order and current_user:
-        order.user_id = current_user.id
-        db.commit()
-        db.refresh(order)
+    order = service.checkout(
+        cart_id=cart_id,
+        user_id=current_user.id if current_user else None,
+    )
 
     return CheckoutResponse(
         order=order,
