@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.deps import require_role
@@ -123,15 +124,19 @@ def update_user(
     is_demoting = data.role is not None and data.role != UserRole.MANAGER.value and target_user.role == UserRole.MANAGER.value
     is_deactivating = data.is_active is False and target_user.is_active and target_user.role == UserRole.MANAGER.value
     if is_demoting or is_deactivating:
-        active_managers_count = (
-            db.query(User)
-            .filter(
-                User.role == UserRole.MANAGER.value,
-                User.is_active.is_(True),
+        active_managers = (
+            db.scalars(
+                select(User)
+                .where(
+                    User.role == UserRole.MANAGER.value,
+                    User.is_active.is_(True),
+                )
+                .order_by(User.id.asc())
+                .with_for_update()
             )
-            .count()
+            .all()
         )
-        if active_managers_count <= 1:
+        if len(active_managers) <= 1:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Cannot deactivate or demote the last remaining active manager.",
@@ -205,15 +210,19 @@ def delete_user(
 
     # Last-manager protection: Ensure the organization retains at least one active manager
     if target_user.role == UserRole.MANAGER.value and target_user.is_active:
-        active_managers_count = (
-            db.query(User)
-            .filter(
-                User.role == UserRole.MANAGER.value,
-                User.is_active.is_(True),
+        active_managers = (
+            db.scalars(
+                select(User)
+                .where(
+                    User.role == UserRole.MANAGER.value,
+                    User.is_active.is_(True),
+                )
+                .order_by(User.id.asc())
+                .with_for_update()
             )
-            .count()
+            .all()
         )
-        if active_managers_count <= 1:
+        if len(active_managers) <= 1:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Cannot delete the last remaining active manager.",
