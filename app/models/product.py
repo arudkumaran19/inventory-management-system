@@ -27,6 +27,11 @@ class Product(Base):
         nullable=False,
         default=0,
     )
+    category: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        default="Coffee",
+    )
     is_active: Mapped[bool] = mapped_column(
         nullable=False,
         default=True,

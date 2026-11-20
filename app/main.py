@@ -9,11 +9,15 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app import models  # noqa: F401
+from app.api.audit import router as audit_router
 from app.api.auth import router as auth_router
 from app.api.carts import router as carts_router
+from app.api.ingredients import router as ingredients_router
+from app.api.locations import router as locations_router
 from app.api.orders import router as orders_router
 from app.api.payments import router as payments_router
 from app.api.products import router as products_router
+from app.api.shifts import router as shifts_router
 from app.api.users import router as users_router
 from app.core.config import settings
 from app.db.session import SessionLocal, get_db
@@ -96,6 +100,10 @@ app.include_router(products_router)
 app.include_router(carts_router)
 app.include_router(payments_router)
 app.include_router(orders_router)
+app.include_router(shifts_router)
+app.include_router(locations_router)
+app.include_router(ingredients_router)
+app.include_router(audit_router)
 
 
 @app.get("/health", tags=["System"])
