@@ -1,12 +1,12 @@
-# Inventory & POS Management System
+# Artisan Café POS | Inventory & Point-of-Sale System
 
-A full-stack point-of-sale and inventory management system featuring real-time stock management, secure order processing, concurrency-safe transactions, and payment workflows.
+A refined, commercial-grade point-of-sale and café inventory management platform featuring real-time stock management, concurrency-safe transactions, automated 5-minute reservation expirations, and resilient payment workflows.
 
 ---
 
 ## 1. Project Overview
 
-The **Inventory & POS Management System** is an enterprise-grade retail and point-of-sale platform designed to solve common retail challenges: race conditions during peak checkout rushes, inventory inconsistencies, orphaned stock holds, and double-billing. Built with a decoupled **FastAPI** backend and **React (Vite + TypeScript + Tailwind CSS)** frontend, the application enforces transactional integrity and role-based access control (RBAC) at every boundary.
+**Artisan Café POS** is a high-performance retail point-of-sale and café management system engineered for independent roasteries, artisan bakeries, and specialty coffee establishments. Designed to solve common hospitality hurdles—such as race conditions during morning peak rushes, orphaned stock holds from abandoned orders, and double-billing on network hiccups—the system couples a robust **FastAPI** backend with a responsive **React (Vite + TypeScript + Tailwind CSS)** register.
 
 ### Core Objectives
 - **Zero Overselling**: Enforces row-level database locking (`SELECT FOR UPDATE`) during checkout and reservation creation so that concurrent buyers cannot claim the same physical inventory.
@@ -519,3 +519,4 @@ Role-based administrative view for provisioning staff accounts, resetting access
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+

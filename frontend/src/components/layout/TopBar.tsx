@@ -34,14 +34,14 @@ export function TopBar({
     }
 
     return (
-        <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-stone-200/80 bg-white/90 px-4 backdrop-blur-md sm:px-6 select-none">
+        <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-[#E8E3DB] bg-[#FAF8F5]/90 px-4 backdrop-blur-md sm:px-6 select-none">
             <div className="flex min-w-0 items-center gap-3">
                 {onMenuClick && (
                     <button
                         type="button"
                         onClick={onMenuClick}
                         aria-label="Open navigation"
-                        className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-stone-200/80 text-stone-600 transition-colors hover:bg-stone-100 hover:text-stone-950 active:scale-95 xl:hidden"
+                        className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-[#E8E3DB] text-[#57534E] transition-colors hover:bg-white hover:text-[#1C1917] active:scale-95 xl:hidden"
                     >
                         <Menu className="size-5" />
                     </button>
@@ -49,23 +49,23 @@ export function TopBar({
 
                 <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-semibold text-amber-700/90 tracking-wide uppercase">
-                            Store Terminal
+                        <span className="text-[11px] font-semibold text-[#78350F] tracking-wide uppercase">
+                            Artisan Roasters
                         </span>
-                        <span className="text-stone-300">•</span>
-                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-stone-500">
-                            <span className="size-1.5 rounded-full bg-emerald-500" />
-                            Live Terminal
+                        <span className="text-[#D8D1C5]">•</span>
+                        <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#78716C]">
+                            <span className="size-1.5 rounded-full bg-[#4E6047]" />
+                            Terminal 01 Online
                         </span>
                     </div>
 
-                    <h1 className="truncate text-base font-bold tracking-tight text-stone-900 sm:text-lg">
+                    <h1 className="truncate font-serif-brand text-lg font-bold tracking-tight text-[#1C1917] sm:text-xl">
                         {title}
                     </h1>
                 </div>
             </div>
 
-            <div className="flex shrink-0 items-center gap-2">
+            <div className="flex shrink-0 items-center gap-2.5">
                 {/* Help Menu */}
                 <div className="relative">
                     <button
@@ -76,49 +76,49 @@ export function TopBar({
                         className={[
                             "flex size-9 items-center justify-center rounded-xl border transition-all duration-150 active:scale-95",
                             openPanel === "help"
-                                ? "border-stone-300 bg-stone-100 text-stone-900 shadow-inner"
-                                : "border-transparent text-stone-500 hover:border-stone-200 hover:bg-stone-100/80 hover:text-stone-900",
+                                ? "border-[#D8D1C5] bg-white text-[#1C1917] shadow-xs"
+                                : "border-transparent text-[#78716C] hover:border-[#E8E3DB] hover:bg-white hover:text-[#1C1917]",
                         ].join(" ")}
                     >
                         <CircleHelp className="size-4.5" />
                     </button>
 
                     {openPanel === "help" && (
-                        <div className="absolute right-0 top-11 z-[80] w-80 rounded-2xl border border-stone-200/90 bg-white p-4 shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-150">
-                            <div className="flex items-center gap-2 border-b border-stone-100 pb-3">
-                                <div className="flex size-7 items-center justify-center rounded-lg bg-amber-50 text-amber-700">
+                        <div className="absolute right-0 top-11 z-[80] w-80 rounded-2xl border border-[#E8E3DB] bg-white p-4 shadow-xl shadow-[#78350F]/5 animate-in fade-in slide-in-from-top-2 duration-150">
+                            <div className="flex items-center gap-2.5 border-b border-[#E8E3DB] pb-3">
+                                <div className="flex size-7 items-center justify-center rounded-lg bg-[#FAF8F5] text-[#78350F] border border-[#E8E3DB]">
                                     <Coffee className="size-4" />
                                 </div>
                                 <div>
-                                    <p className="text-sm font-bold text-stone-900">
+                                    <p className="font-serif-brand text-sm font-bold text-[#1C1917]">
                                         Terminal Guide
                                     </p>
-                                    <p className="text-[11px] text-stone-400">
-                                        Quick operator shortcuts & workflows
+                                    <p className="text-[11px] text-[#78716C]">
+                                        Artisan POS workflows &amp; controls
                                     </p>
                                 </div>
                             </div>
 
-                            <div className="mt-3 space-y-2.5 text-xs leading-5 text-stone-600">
-                                <div className="rounded-xl bg-stone-50/80 p-2.5">
-                                    <strong className="font-semibold text-stone-900">
-                                        1. Point of Sale:
+                            <div className="mt-3 space-y-2 text-xs leading-5 text-[#57534E]">
+                                <div className="rounded-xl bg-[#FAF8F5] border border-[#E8E3DB]/60 p-2.5">
+                                    <strong className="font-semibold text-[#1C1917]">
+                                        1. Add Items to Order:
                                     </strong>{" "}
-                                    Click items to add to cart. Continue to checkout reserves stock with a 5-minute expiry timer.
+                                    Tap any beverage or bakery card to add to current register ticket.
                                 </div>
 
-                                <div className="rounded-xl bg-stone-50/80 p-2.5">
-                                    <strong className="font-semibold text-stone-900">
-                                        2. Payment Gateway:
+                                <div className="rounded-xl bg-[#FAF8F5] border border-[#E8E3DB]/60 p-2.5">
+                                    <strong className="font-semibold text-[#1C1917]">
+                                        2. Concurrency-Safe Checkout:
                                     </strong>{" "}
-                                    Test realistic gateway outcomes (Success, Decline, Timeout) or cancel reservations anytime to release stock.
+                                    Proceeding to checkout locks stock and starts a 5-minute reservation timer.
                                 </div>
 
-                                <div className="rounded-xl bg-stone-50/80 p-2.5">
-                                    <strong className="font-semibold text-stone-900">
-                                        3. Real-Time Sync:
+                                <div className="rounded-xl bg-[#FAF8F5] border border-[#E8E3DB]/60 p-2.5">
+                                    <strong className="font-semibold text-[#1C1917]">
+                                        3. Gateway Simulation:
                                     </strong>{" "}
-                                    Inventory and orders sync live every 4s across all open registers.
+                                    Test realistic gateway outcomes (Success, Decline, Timeout) with idempotency protection.
                                 </div>
                             </div>
                         </div>
@@ -135,57 +135,57 @@ export function TopBar({
                         className={[
                             "relative flex size-9 items-center justify-center rounded-xl border transition-all duration-150 active:scale-95",
                             openPanel === "notifications"
-                                ? "border-stone-300 bg-stone-100 text-stone-900 shadow-inner"
-                                : "border-transparent text-stone-500 hover:border-stone-200 hover:bg-stone-100/80 hover:text-stone-900",
+                                ? "border-[#D8D1C5] bg-white text-[#1C1917] shadow-xs"
+                                : "border-transparent text-[#78716C] hover:border-[#E8E3DB] hover:bg-white hover:text-[#1C1917]",
                         ].join(" ")}
                     >
                         <Bell className="size-4.5" />
 
                         {cartItemCount > 0 && (
-                            <span className="absolute right-2 top-2 size-2 rounded-full bg-amber-500 ring-2 ring-white" />
+                            <span className="absolute right-2 top-2 size-2 rounded-full bg-[#78350F] ring-2 ring-white" />
                         )}
                     </button>
 
                     {openPanel === "notifications" && (
-                        <div className="absolute right-0 top-11 z-[80] w-80 rounded-2xl border border-stone-200/90 bg-white p-4 shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-150">
-                            <div className="flex items-center justify-between border-b border-stone-100 pb-3">
-                                <p className="text-sm font-bold text-stone-900">
-                                    System Status
+                        <div className="absolute right-0 top-11 z-[80] w-80 rounded-2xl border border-[#E8E3DB] bg-white p-4 shadow-xl shadow-[#78350F]/5 animate-in fade-in slide-in-from-top-2 duration-150">
+                            <div className="flex items-center justify-between border-b border-[#E8E3DB] pb-3">
+                                <p className="font-serif-brand text-sm font-bold text-[#1C1917]">
+                                    Terminal Status
                                 </p>
-                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                                <span className="inline-flex items-center gap-1 rounded-full bg-[#EDF6EE] px-2 py-0.5 text-[10px] font-bold text-[#215A36] border border-[#C8E3CE]">
                                     <ShieldCheck className="size-3" />
-                                    Healthy
+                                    Synchronized
                                 </span>
                             </div>
 
                             <div className="mt-3 space-y-2">
-                                <div className="flex items-start gap-2.5 rounded-xl border border-emerald-100 bg-emerald-50/60 p-2.5">
-                                    <span className="mt-0.5 flex size-2 rounded-full bg-emerald-500 shrink-0" />
+                                <div className="flex items-start gap-2.5 rounded-xl border border-[#C8E3CE] bg-[#EDF6EE]/60 p-2.5">
+                                    <span className="mt-1 flex size-2 rounded-full bg-[#4E6047] shrink-0" />
                                     <div>
-                                        <p className="text-xs font-semibold text-emerald-900">
-                                            Inventory & POS Online
+                                        <p className="text-xs font-semibold text-[#215A36]">
+                                            Inventory &amp; POS Active
                                         </p>
-                                        <p className="mt-0.5 text-[11px] leading-4 text-emerald-700">
-                                            Checkout, stock reservation, and idempotency services operational.
+                                        <p className="mt-0.5 text-[11px] leading-4 text-[#215A36]/80">
+                                            Row-level locking, automated expiry sweeper, and payment idempotency running smoothly.
                                         </p>
                                     </div>
                                 </div>
 
                                 {cartItemCount > 0 ? (
-                                    <div className="flex items-start gap-2.5 rounded-xl border border-amber-100 bg-amber-50/60 p-2.5">
-                                        <Sparkles className="size-3.5 text-amber-600 shrink-0 mt-0.5" />
+                                    <div className="flex items-start gap-2.5 rounded-xl border border-[#F7E0B5] bg-[#FEF8EC] p-2.5">
+                                        <Sparkles className="size-3.5 text-[#78350F] shrink-0 mt-0.5" />
                                         <div>
-                                            <p className="text-xs font-semibold text-amber-900">
+                                            <p className="text-xs font-semibold text-[#8C4E08]">
                                                 Active Register Order
                                             </p>
-                                            <p className="mt-0.5 text-[11px] text-amber-700">
-                                                {cartItemCount} {cartItemCount === 1 ? "item" : "items"} currently staged in cart.
+                                            <p className="mt-0.5 text-[11px] text-[#8C4E08]/80">
+                                                {cartItemCount} {cartItemCount === 1 ? "item" : "items"} staged in current order.
                                             </p>
                                         </div>
                                     </div>
                                 ) : (
-                                    <p className="py-2 text-center text-[11px] text-stone-400">
-                                        No pending alerts
+                                    <p className="py-2 text-center text-[11px] text-[#A8A29E]">
+                                        No pending order alerts
                                     </p>
                                 )}
                             </div>
@@ -193,20 +193,20 @@ export function TopBar({
                     )}
                 </div>
 
-                <div className="mx-1 h-5 w-px bg-stone-200" />
+                <div className="mx-1 h-5 w-px bg-[#E8E3DB]" />
 
                 {/* Cart indicator badge */}
-                <div className="flex items-center gap-2 rounded-xl border border-stone-200/90 bg-stone-50/80 px-3 py-1.5 shadow-sm">
-                    <ShoppingCart className="size-4 text-stone-700" />
-                    <span className="text-xs font-semibold text-stone-800">
-                        Cart
+                <div className="flex items-center gap-2 rounded-xl border border-[#E8E3DB] bg-white px-3 py-1.5 shadow-xs">
+                    <ShoppingCart className="size-4 text-[#78350F]" />
+                    <span className="text-xs font-semibold text-[#1C1917]">
+                        Ticket
                     </span>
                     <span
                         className={[
                             "flex min-w-5 h-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold transition-all",
                             cartItemCount > 0
-                                ? "bg-amber-600 text-white shadow-xs shadow-amber-600/30"
-                                : "bg-stone-200 text-stone-600",
+                                ? "bg-[#78350F] text-white"
+                                : "bg-[#F5F1EA] text-[#78716C]",
                         ].join(" ")}
                     >
                         {cartItemCount}
@@ -222,44 +222,44 @@ export function TopBar({
                             aria-expanded={openPanel === "profile"}
                             onClick={() => togglePanel("profile")}
                             className={[
-                                "flex items-center gap-2 rounded-xl border border-stone-200/90 bg-stone-50/80 px-2.5 py-1.5 shadow-sm transition-all duration-150 hover:border-stone-300 hover:bg-stone-100/90 active:scale-95",
-                                openPanel === "profile" ? "border-stone-400 bg-stone-100 ring-2 ring-amber-500/20" : "",
+                                "flex items-center gap-2 rounded-xl border border-[#E8E3DB] bg-white px-2.5 py-1.5 shadow-xs transition-all duration-150 hover:border-[#D8D1C5] hover:bg-[#FAF8F5] active:scale-95",
+                                openPanel === "profile" ? "border-[#78350F] ring-2 ring-[#78350F]/15" : "",
                             ].join(" ")}
                         >
                             <div className={[
                                 "flex size-6 items-center justify-center rounded-lg text-[10px] font-bold text-white shadow-xs",
                                 user.role === "manager"
-                                    ? "bg-gradient-to-br from-amber-500 to-amber-700"
-                                    : "bg-gradient-to-br from-emerald-500 to-teal-700",
+                                    ? "bg-[#78350F]"
+                                    : "bg-[#4E6047]",
                             ].join(" ")}>
                                 {user.display_name.slice(0, 2).toUpperCase()}
                             </div>
                             <div className="hidden text-left sm:block">
-                                <p className="truncate text-xs font-semibold leading-tight text-stone-800">
+                                <p className="truncate text-xs font-semibold leading-tight text-[#1C1917]">
                                     {user.display_name}
                                 </p>
-                                <p className="text-[10px] font-medium text-stone-400 capitalize">
+                                <p className="text-[10px] font-medium text-[#78716C] capitalize">
                                     {user.role}
                                 </p>
                             </div>
-                            <ChevronDown className="size-3 text-stone-400" />
+                            <ChevronDown className="size-3 text-[#A8A29E]" />
                         </button>
 
                         {openPanel === "profile" && (
-                            <div className="absolute right-0 top-11 z-[80] w-64 rounded-2xl border border-stone-200/90 bg-white p-3 shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-150">
-                                <div className="border-b border-stone-100 pb-2.5 px-1">
-                                    <p className="text-xs font-bold text-stone-900 truncate">
+                            <div className="absolute right-0 top-11 z-[80] w-64 rounded-2xl border border-[#E8E3DB] bg-white p-3 shadow-xl shadow-[#78350F]/5 animate-in fade-in slide-in-from-top-2 duration-150">
+                                <div className="border-b border-[#E8E3DB] pb-2.5 px-1">
+                                    <p className="font-serif-brand text-sm font-bold text-[#1C1917] truncate">
                                         {user.display_name}
                                     </p>
-                                    <p className="text-[11px] text-stone-400 truncate">
+                                    <p className="text-[11px] text-[#78716C] truncate">
                                         {user.email}
                                     </p>
                                     <div
-                                        className="mt-1.5 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize border"
+                                        className="mt-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold capitalize border"
                                         style={{
-                                            backgroundColor: user.role === "manager" ? "#fffbeb" : "#ecfdf5",
-                                            color: user.role === "manager" ? "#b45309" : "#047857",
-                                            borderColor: user.role === "manager" ? "#fde68a" : "#a7f3d0",
+                                            backgroundColor: user.role === "manager" ? "#FEF8EC" : "#EDF6EE",
+                                            color: user.role === "manager" ? "#8C4E08" : "#215A36",
+                                            borderColor: user.role === "manager" ? "#F7E0B5" : "#C8E3CE",
                                         }}
                                     >
                                         <Shield className="size-3" />
@@ -274,10 +274,10 @@ export function TopBar({
                                             setOpenPanel(null)
                                             logout()
                                         }}
-                                        className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-semibold text-rose-600 transition-colors hover:bg-rose-50 active:scale-[0.98]"
+                                        className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-semibold text-[#9B2C2C] transition-colors hover:bg-[#FDF2F2] active:scale-[0.98]"
                                     >
                                         <LogOut className="size-3.5" />
-                                        <span>Sign Out</span>
+                                        <span>Sign Out Operator</span>
                                     </button>
                                 </div>
                             </div>

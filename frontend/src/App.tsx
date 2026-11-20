@@ -10,10 +10,10 @@ import { InventoryView } from "./components/inventory/InventoryView"
 import { UserManagementView } from "./components/users/UserManagementView"
 
 const pageTitles: Record<AppPage, string> = {
-    pos: "Point of Sale",
-    orders: "Orders",
-    inventory: "Inventory",
-    users: "Team & Operators",
+    pos: "Register Terminal",
+    orders: "Order Ledger & Audit",
+    inventory: "Inventory & Catalog",
+    users: "Team & Permissions",
 }
 
 function AuthenticatedPOS() {
@@ -22,14 +22,19 @@ function AuthenticatedPOS() {
 
     if (isLoading) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-[#141210] text-stone-200">
-                <div className="flex flex-col items-center gap-3">
-                    <div className="flex size-12 items-center justify-center rounded-2xl bg-amber-600/20 text-amber-500 animate-pulse">
-                        <Coffee className="size-6" />
+            <div className="flex min-h-screen items-center justify-center bg-[#FAF8F5] text-stone-900">
+                <div className="flex flex-col items-center gap-3.5">
+                    <div className="flex size-14 items-center justify-center rounded-2xl border border-[#E8E3DB] bg-white text-[#78350F] shadow-sm">
+                        <Coffee className="size-7 animate-pulse text-[#78350F]" />
                     </div>
-                    <p className="text-xs font-semibold tracking-wide text-stone-400">
-                        Initializing POS Terminal Session...
-                    </p>
+                    <div className="text-center">
+                        <p className="font-serif-brand text-lg font-semibold text-[#1C1917]">
+                            Artisan Café POS
+                        </p>
+                        <p className="mt-0.5 text-xs font-medium text-stone-500">
+                            Connecting register session...
+                        </p>
+                    </div>
                 </div>
             </div>
         )

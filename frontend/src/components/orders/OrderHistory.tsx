@@ -28,17 +28,15 @@ type OrderHistoryProps = {
 function getStatusClasses(status: string) {
     switch (status) {
         case "Paid":
-            return "bg-emerald-50 text-emerald-800 ring-emerald-300"
+            return "bg-[#EDF6EE] text-[#215A36] border-[#C8E3CE]"
         case "Reserved":
-            return "bg-amber-50 text-amber-900 ring-amber-300"
+            return "bg-[#FEF8EC] text-[#8C4E08] border-[#F7E0B5]"
         case "Failed":
-            return "bg-rose-50 text-rose-800 ring-rose-300"
+            return "bg-[#FDF2F2] text-[#9B2C2C] border-[#F8C8C8]"
         case "Expired":
-            return "bg-stone-100 text-stone-600 ring-stone-200"
         case "Cancelled":
-            return "bg-stone-100 text-stone-500 ring-stone-200"
         default:
-            return "bg-stone-100 text-stone-600 ring-stone-200"
+            return "bg-[#F5F1EA] text-[#78716C] border-[#E8E3DB]"
     }
 }
 
@@ -70,20 +68,17 @@ function formatCurrency(value: number) {
     }).format(value)
 }
 
-/** Returns a short display label for the handler, or a legacy fallback. */
 function formatHandledBy(handler: HandledBy | null | undefined): string {
-    if (!handler) return "Unknown / Legacy Order"
+    if (!handler) return "Terminal Register (Default)"
     return handler.display_name
 }
 
-/** Returns handler display with role badge text, e.g. "Maya Patel · Manager" */
 function formatHandledByWithRole(handler: HandledBy | null | undefined): string {
-    if (!handler) return "Unknown / Legacy Order"
+    if (!handler) return "Terminal Register (Default)"
     const role = handler.role.charAt(0).toUpperCase() + handler.role.slice(1)
-    return `${handler.display_name} · ${role}`
+    return `${handler.display_name} (${role})`
 }
 
-/** Format an ISO timestamp to a short time string, e.g. "2:47 PM" */
 function formatTime(iso: string | null | undefined): string {
     if (!iso) return ""
     return new Date(iso).toLocaleTimeString([], {
@@ -93,7 +88,6 @@ function formatTime(iso: string | null | undefined): string {
     })
 }
 
-/** Format an ISO timestamp to a date+time string, e.g. "Sep 14, 2:47 PM" */
 function formatDateTime(iso: string | null | undefined): string {
     if (!iso) return ""
     return new Date(iso).toLocaleString([], {
@@ -109,7 +103,7 @@ function getOrderTimestamp(
 ): { label: string; iso: string } {
     switch (order.status) {
         case "Paid":
-            return { label: "Paid", iso: order.completed_at ?? order.created_at }
+            return { label: "Settled", iso: order.completed_at ?? order.created_at }
         case "Cancelled":
             return { label: "Cancelled", iso: order.completed_at ?? order.created_at }
         case "Expired":
@@ -117,7 +111,7 @@ function getOrderTimestamp(
         case "Failed":
             return { label: "Failed", iso: order.completed_at ?? order.created_at }
         default:
-            return { label: "Created", iso: order.created_at }
+            return { label: "Staged", iso: order.created_at }
     }
 }
 
@@ -162,7 +156,7 @@ export function OrderHistory({
             setError(
                 requestError instanceof Error
                     ? requestError.message
-                    : "Unable to load orders.",
+                    : "Unable to load orders ledger.",
             )
         } finally {
             setLoading(false)
@@ -189,7 +183,7 @@ export function OrderHistory({
                             setError(
                                 requestError instanceof Error
                                     ? requestError.message
-                                    : "Unable to load orders.",
+                                    : "Unable to load orders ledger.",
                             )
                             setLoading(false)
                         }
@@ -199,7 +193,7 @@ export function OrderHistory({
 
         fetchLatest(true)
 
-        // Silent auto-refresh orders every 4 seconds and on focus so reservation expirations update live
+        // Silent auto-refresh orders every 4s
         const intervalId = setInterval(() => fetchLatest(false), 4000)
         const onFocus = () => fetchLatest(false)
         window.addEventListener("focus", onFocus)
@@ -260,7 +254,6 @@ export function OrderHistory({
             return
         }
 
-        // Require explicit confirmation before proceeding.
         if (confirmCancelId !== selectedOrder.id) {
             setConfirmCancelId(selectedOrder.id)
             return
@@ -274,12 +267,11 @@ export function OrderHistory({
             await cancelOrder(selectedOrder.id)
 
             setCancelMessage(
-                `Order #${selectedOrder.id} cancelled successfully. Stock has been restored.`,
+                `Order #${selectedOrder.id} cancelled successfully. Inventory restored.`,
             )
 
             setConfirmCancelId(null)
             await loadOrders(true)
-
             onInventoryRefresh?.()
         } catch (requestError) {
             setError(
@@ -294,9 +286,9 @@ export function OrderHistory({
 
     if (loading) {
         return (
-            <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-[#f8fafc]">
-                <div className="flex items-center gap-2 text-sm font-semibold text-stone-500">
-                    <Loader2 className="size-5 animate-spin text-amber-700" />
+            <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-[#FAF8F5]">
+                <div className="flex items-center gap-2.5 text-sm font-semibold text-[#78716C]">
+                    <Loader2 className="size-5 animate-spin text-[#78350F]" />
                     Loading orders ledger...
                 </div>
             </div>
@@ -304,20 +296,20 @@ export function OrderHistory({
     }
 
     return (
-        <div className="min-h-[calc(100vh-4rem)] bg-[#f8fafc]">
+        <div className="min-h-[calc(100vh-4rem)] bg-[#FAF8F5]">
             <div className="mx-auto max-w-7xl p-4 sm:p-6 space-y-6">
                 {/* Page Title & Refresh */}
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <div className="flex items-center gap-2">
-                            <ClipboardList className="size-5 text-stone-800" />
-                            <h1 className="text-xl font-bold tracking-tight text-stone-900">
-                                Order History & Audit
+                        <div className="flex items-center gap-2.5">
+                            <ClipboardList className="size-5 text-[#78350F]" />
+                            <h1 className="font-serif-brand text-2xl font-bold tracking-tight text-[#1C1917]">
+                                Order Ledger &amp; Audit Trail
                             </h1>
                         </div>
 
-                        <p className="mt-0.5 text-xs text-stone-500 font-medium">
-                            Real-time transaction register, stock holds, and payment logs.
+                        <p className="mt-0.5 text-xs text-[#78716C] font-medium">
+                            Real-time transaction log, operator attribution, and payment settlements.
                         </p>
                     </div>
 
@@ -325,11 +317,11 @@ export function OrderHistory({
                         type="button"
                         onClick={() => void loadOrders(true)}
                         disabled={refreshing}
-                        className="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-stone-200/90 bg-white px-3.5 text-xs font-bold text-stone-700 shadow-2xs hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 transition-all"
+                        className="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-[#E8E3DB] bg-white px-3.5 text-xs font-bold text-[#1C1917] shadow-2xs hover:bg-[#FAF8F5] disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 transition-all"
                     >
                         <RefreshCw
                             className={`size-3.5 ${
-                                refreshing ? "animate-spin text-amber-700" : ""
+                                refreshing ? "animate-spin text-[#78350F]" : ""
                             }`}
                         />
                         Refresh Ledger
@@ -337,48 +329,48 @@ export function OrderHistory({
                 </div>
 
                 {/* KPI Metrics Banner */}
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    <div className="rounded-2xl border border-stone-200/80 bg-white p-4 shadow-xs">
-                        <p className="text-[11px] font-bold tracking-wider text-stone-400 uppercase">
-                            Total Orders
+                <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-4">
+                    <div className="rounded-2xl border border-[#E8E3DB] bg-white p-4 shadow-2xs">
+                        <p className="text-[11px] font-bold tracking-wider text-[#A8A29E] uppercase">
+                            Total Tickets
                         </p>
-                        <p className="tnum mt-1 text-2xl font-extrabold tracking-tight text-stone-900">
+                        <p className="tnum mt-1 text-2xl font-extrabold tracking-tight text-[#1C1917]">
                             {stats.totalCount}
                         </p>
                     </div>
 
-                    <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/40 p-4 shadow-xs">
+                    <div className="rounded-2xl border border-[#C8E3CE] bg-[#EDF6EE]/60 p-4 shadow-2xs">
                         <div className="flex items-center justify-between">
-                            <p className="text-[11px] font-bold tracking-wider text-emerald-800 uppercase">
-                                Completed Paid
+                            <p className="text-[11px] font-bold tracking-wider text-[#215A36] uppercase">
+                                Settled Paid
                             </p>
-                            <CheckCircle2 className="size-4 text-emerald-600" />
+                            <CheckCircle2 className="size-4 text-[#4E6047]" />
                         </div>
-                        <p className="tnum mt-1 text-2xl font-extrabold tracking-tight text-emerald-900">
+                        <p className="tnum mt-1 text-2xl font-extrabold tracking-tight text-[#215A36]">
                             {stats.paidCount}
                         </p>
                     </div>
 
-                    <div className="rounded-2xl border border-amber-200/80 bg-amber-50/40 p-4 shadow-xs">
+                    <div className="rounded-2xl border border-[#F7E0B5] bg-[#FEF8EC]/60 p-4 shadow-2xs">
                         <div className="flex items-center justify-between">
-                            <p className="text-[11px] font-bold tracking-wider text-amber-800 uppercase">
-                                Active Reserved
+                            <p className="text-[11px] font-bold tracking-wider text-[#8C4E08] uppercase">
+                                Active Stock Holds
                             </p>
-                            <Clock3 className="size-4 text-amber-600" />
+                            <Clock3 className="size-4 text-[#B45309]" />
                         </div>
-                        <p className="tnum mt-1 text-2xl font-extrabold tracking-tight text-amber-900">
+                        <p className="tnum mt-1 text-2xl font-extrabold tracking-tight text-[#8C4E08]">
                             {stats.reservedCount}
                         </p>
                     </div>
 
-                    <div className="rounded-2xl border border-stone-200/80 bg-white p-4 shadow-xs">
+                    <div className="rounded-2xl border border-[#E8E3DB] bg-white p-4 shadow-2xs">
                         <div className="flex items-center justify-between">
-                            <p className="text-[11px] font-bold tracking-wider text-stone-400 uppercase">
+                            <p className="text-[11px] font-bold tracking-wider text-[#A8A29E] uppercase">
                                 Paid Volume
                             </p>
-                            <DollarSign className="size-4 text-stone-600" />
+                            <DollarSign className="size-4 text-[#78350F]" />
                         </div>
-                        <p className="tnum mt-1 text-2xl font-extrabold tracking-tight text-stone-950">
+                        <p className="tnum mt-1 text-2xl font-extrabold tracking-tight text-[#1C1917]">
                             {formatCurrency(stats.totalRevenue)}
                         </p>
                     </div>
@@ -387,14 +379,14 @@ export function OrderHistory({
                 {/* Filter and Search Bar */}
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="relative min-w-0 flex-1 sm:max-w-xs">
-                        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-stone-400" />
+                        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#A8A29E]" />
                         <input
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="Filter by Order # or item..."
                             aria-label="Filter orders"
-                            className="h-9.5 w-full rounded-xl border border-stone-200/90 bg-white pl-9 pr-3 text-xs text-stone-900 outline-none placeholder:text-stone-400 focus:border-amber-600/60 focus:ring-2 focus:ring-amber-500/15 shadow-2xs"
+                            className="h-9.5 w-full rounded-xl border border-[#E8E3DB] bg-white pl-9 pr-3 text-xs text-[#1C1917] outline-none placeholder:text-[#A8A29E] focus:border-[#78350F] focus:ring-2 focus:ring-[#78350F]/15 shadow-2xs"
                         />
                     </div>
 
@@ -423,8 +415,8 @@ export function OrderHistory({
                                     className={[
                                         "inline-flex h-8.5 items-center gap-1.5 rounded-xl px-3 text-xs font-bold transition-all active:scale-95 shrink-0",
                                         active
-                                            ? "bg-stone-900 text-white shadow-xs"
-                                            : "border border-stone-200/90 bg-white text-stone-600 hover:bg-stone-50 hover:text-stone-900",
+                                            ? "bg-[#1C1917] text-white shadow-2xs"
+                                            : "border border-[#E8E3DB] bg-white text-[#57534E] hover:bg-[#FAF8F5] hover:text-[#1C1917]",
                                     ].join(" ")}
                                 >
                                     <span>{tab.label}</span>
@@ -432,8 +424,8 @@ export function OrderHistory({
                                         className={[
                                             "rounded-full px-1.5 py-0.2 text-[10px]",
                                             active
-                                                ? "bg-stone-750 text-stone-200"
-                                                : "bg-stone-100 text-stone-600",
+                                                ? "bg-white/20 text-white"
+                                                : "bg-[#F5F1EA] text-[#78716C]",
                                         ].join(" ")}
                                     >
                                         {count}
@@ -445,26 +437,26 @@ export function OrderHistory({
                 </div>
 
                 {cancelMessage && (
-                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800 shadow-xs">
+                    <div className="rounded-xl border border-[#C8E3CE] bg-[#EDF6EE] px-4 py-3 text-xs font-medium text-[#215A36] shadow-2xs">
                         {cancelMessage}
                     </div>
                 )}
 
                 {error && (
-                    <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800 shadow-xs">
+                    <div className="rounded-xl border border-[#F8C8C8] bg-[#FDF2F2] px-4 py-3 text-xs font-medium text-[#9B2C2C] shadow-2xs">
                         {error}
                     </div>
                 )}
 
                 {/* Orders Content Split View */}
                 {filteredOrders.length === 0 ? (
-                    <div className="flex min-h-72 flex-col items-center justify-center rounded-2xl border border-dashed border-stone-300 bg-white/70 p-8 text-center">
-                        <Package className="size-8 text-stone-300" />
-                        <p className="mt-3 text-sm font-bold text-stone-900">
-                            No orders found
+                    <div className="flex min-h-72 flex-col items-center justify-center rounded-2xl border border-dashed border-[#D8D1C5] bg-white/70 p-8 text-center">
+                        <Package className="size-8 text-[#A8A29E]" />
+                        <p className="mt-3 font-serif-brand text-sm font-bold text-[#1C1917]">
+                            No Transactions Found
                         </p>
-                        <p className="mt-1 text-xs text-stone-500">
-                            No transactions matched the active filter or search query.
+                        <p className="mt-1 text-xs text-[#78716C]">
+                            No register orders matched the active filter or query.
                         </p>
                     </div>
                 ) : (
@@ -485,23 +477,23 @@ export function OrderHistory({
                                         className={[
                                             "w-full rounded-2xl border bg-white p-4 text-left shadow-2xs transition-all duration-150 active:scale-[0.99]",
                                             selected
-                                                ? "border-stone-900 ring-2 ring-stone-900 shadow-md"
-                                                : "border-stone-200/90 hover:border-stone-300 hover:shadow-sm",
+                                                ? "border-[#78350F] ring-2 ring-[#78350F]/20 shadow-xs"
+                                                : "border-[#E8E3DB] hover:border-[#D8D1C5] hover:shadow-2xs",
                                         ].join(" ")}
                                     >
                                         <div className="flex items-center gap-4">
-                                            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-stone-100 text-stone-700">
+                                            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#FAF8F5] text-[#78350F] border border-[#E8E3DB]">
                                                 <StatusIcon className="size-5" />
                                             </div>
 
                                             <div className="min-w-0 flex-1">
                                                 <div className="flex items-center justify-between gap-3">
-                                                    <p className="text-sm font-bold text-stone-900">
+                                                    <p className="font-serif-brand text-base font-bold text-[#1C1917]">
                                                         Order #{order.id}
                                                     </p>
 
                                                     <span
-                                                        className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold ring-1 ${getStatusClasses(
+                                                        className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold border ${getStatusClasses(
                                                             order.status,
                                                         )}`}
                                                     >
@@ -509,29 +501,29 @@ export function OrderHistory({
                                                     </span>
                                                 </div>
 
-                                                <p className="tnum mt-1 text-xs text-stone-500 font-medium">
+                                                <p className="tnum mt-1 text-xs text-[#78716C] font-medium">
                                                     {order.items.length}{" "}
                                                     {order.items.length === 1 ? "item" : "items"}
                                                     {" · "}
-                                                    <strong className="text-stone-900 font-bold">
+                                                    <strong className="text-[#1C1917] font-bold">
                                                         {formatCurrency(total)}
                                                     </strong>
                                                     {" · "}
                                                     {ts.label} {formatTime(ts.iso)}
                                                 </p>
 
-                                                <p className="mt-1 flex items-center gap-1 text-[11px] text-stone-400 font-medium">
-                                                    <User className="size-3 shrink-0" />
+                                                <p className="mt-1 flex items-center gap-1.5 text-[11px] text-[#A8A29E] font-medium">
+                                                    <User className="size-3 shrink-0 text-[#78716C]" />
                                                     <span>
-                                                        Handled by{" "}
-                                                        <span className={order.handled_by ? "font-semibold text-stone-600" : "italic"}>
+                                                        Operator:{" "}
+                                                        <span className={order.handled_by ? "font-semibold text-[#57534E]" : "italic"}>
                                                             {formatHandledBy(order.handled_by)}
                                                         </span>
                                                     </span>
                                                 </p>
                                             </div>
 
-                                            <ChevronRight className="size-4 shrink-0 text-stone-400" />
+                                            <ChevronRight className="size-4 shrink-0 text-[#A8A29E]" />
                                         </div>
                                     </button>
                                 )
@@ -539,34 +531,34 @@ export function OrderHistory({
                         </section>
 
                         {/* Order Detail Drawer */}
-                        <aside className="h-fit rounded-2xl border border-stone-200/90 bg-white p-5 shadow-xs lg:sticky lg:top-20">
+                        <aside className="h-fit rounded-2xl border border-[#E8E3DB] bg-white p-5 shadow-2xs lg:sticky lg:top-20">
                             {selectedOrder === null ? (
                                 <div className="py-16 text-center">
-                                    <Package className="mx-auto size-8 text-stone-300" />
-                                    <p className="mt-3 text-sm font-bold text-stone-900">
-                                        Select an order
+                                    <Package className="mx-auto size-8 text-[#A8A29E]" />
+                                    <p className="mt-3 font-serif-brand text-sm font-bold text-[#1C1917]">
+                                        Select an Order
                                     </p>
-                                    <p className="mt-1 text-xs text-stone-500">
-                                        Choose any order card to inspect itemized receipts and manage status.
+                                    <p className="mt-1 text-xs text-[#78716C]">
+                                        Choose any transaction card to view itemized receipts and order details.
                                     </p>
                                 </div>
                             ) : (
                                 <>
-                                    <div className="flex items-start justify-between gap-4 border-b border-stone-100 pb-4">
+                                    <div className="flex items-start justify-between gap-4 border-b border-[#E8E3DB] pb-4">
                                         <div>
-                                            <p className="text-[10px] font-bold tracking-wider text-stone-400 uppercase">
-                                                Order Receipt
+                                            <p className="text-[10px] font-bold tracking-wider text-[#A8A29E] uppercase">
+                                                Receipt Breakdown
                                             </p>
 
-                                            <h2 className="mt-0.5 text-lg font-extrabold text-stone-950">
-                                                #{selectedOrder.id}
+                                            <h2 className="mt-0.5 font-serif-brand text-xl font-extrabold text-[#1C1917]">
+                                                Order #{selectedOrder.id}
                                             </h2>
 
                                             {/* Timestamp breakdown */}
-                                            <div className="mt-1 space-y-0.5 text-[11px] text-stone-500 font-medium">
+                                            <div className="mt-1.5 space-y-0.5 text-[11px] text-[#78716C] font-medium">
                                                 <p>
                                                     Created:{" "}
-                                                    <span className="font-semibold text-stone-800">
+                                                    <span className="font-semibold text-[#1C1917]">
                                                         {formatDateTime(selectedOrder.created_at)}
                                                     </span>
                                                 </p>
@@ -574,29 +566,23 @@ export function OrderHistory({
                                                 {selectedOrder.completed_at && (
                                                     <p>
                                                         {selectedOrder.status === "Paid"
-                                                            ? "Paid: "
+                                                            ? "Settled: "
                                                             : selectedOrder.status === "Cancelled"
                                                                 ? "Cancelled: "
                                                                 : selectedOrder.status === "Expired"
                                                                     ? "Expired: "
                                                                     : "Resolved: "}
-                                                        <span className="font-semibold text-stone-800">
+                                                        <span className="font-semibold text-[#1C1917]">
                                                             {formatDateTime(selectedOrder.completed_at)}
                                                         </span>
                                                     </p>
                                                 )}
 
-                                                <p className="flex items-center gap-1 pt-0.5">
-                                                    <User className="size-3 shrink-0 text-stone-400" />
+                                                <p className="flex items-center gap-1.5 pt-0.5">
+                                                    <User className="size-3 shrink-0 text-[#78716C]" />
                                                     <span>
-                                                        Handled by{" "}
-                                                        <span
-                                                            className={
-                                                                selectedOrder.handled_by
-                                                                    ? "font-semibold text-stone-700"
-                                                                    : "italic text-stone-400"
-                                                            }
-                                                        >
+                                                        Operator:{" "}
+                                                        <span className="font-semibold text-[#1C1917]">
                                                             {formatHandledByWithRole(selectedOrder.handled_by)}
                                                         </span>
                                                     </span>
@@ -605,7 +591,7 @@ export function OrderHistory({
                                         </div>
 
                                         <span
-                                            className={`rounded-full px-2.5 py-1 text-xs font-bold ring-1 ${getStatusClasses(
+                                            className={`rounded-full px-2.5 py-1 text-xs font-bold border ${getStatusClasses(
                                                 selectedOrder.status,
                                             )}`}
                                         >
@@ -615,26 +601,26 @@ export function OrderHistory({
 
                                     {/* Items breakdown */}
                                     <div className="mt-4">
-                                        <p className="text-[11px] font-bold tracking-wider text-stone-400 uppercase">
+                                        <p className="text-[10px] font-bold tracking-wider text-[#A8A29E] uppercase">
                                             Itemized Products
                                         </p>
 
-                                        <div className="mt-2.5 divide-y divide-stone-100">
+                                        <div className="mt-2.5 divide-y divide-[#E8E3DB]/70">
                                             {selectedOrder.items.map((item) => (
                                                 <div
                                                     key={`${selectedOrder.id}-${item.product_id}`}
-                                                    className="flex items-center justify-between py-2 text-xs"
+                                                    className="flex items-center justify-between py-2.5 text-xs"
                                                 >
                                                     <div>
-                                                        <p className="font-bold text-stone-900">
+                                                        <p className="font-bold text-[#1C1917]">
                                                             {item.product_name}
                                                         </p>
-                                                        <p className="tnum text-[11px] text-stone-400">
+                                                        <p className="tnum text-[11px] text-[#78716C]">
                                                             {item.quantity} × {formatCurrency(Number(item.unit_price))}
                                                         </p>
                                                     </div>
 
-                                                    <p className="tnum font-extrabold text-stone-900">
+                                                    <p className="tnum font-extrabold text-[#1C1917]">
                                                         {formatCurrency(Number(item.unit_price) * item.quantity)}
                                                     </p>
                                                 </div>
@@ -643,12 +629,12 @@ export function OrderHistory({
                                     </div>
 
                                     {/* Total */}
-                                    <div className="mt-4 border-t border-stone-200/80 pt-3">
+                                    <div className="mt-4 border-t border-[#E8E3DB] pt-3">
                                         <div className="flex items-center justify-between">
-                                            <span className="text-xs font-bold text-stone-500 uppercase">
-                                                Total
+                                            <span className="font-serif-brand text-xs font-bold text-[#57534E] uppercase">
+                                                Total Settle
                                             </span>
-                                            <span className="tnum text-xl font-extrabold text-stone-950">
+                                            <span className="tnum text-xl font-extrabold text-[#1C1917]">
                                                 {formatCurrency(getOrderTotal(selectedOrder))}
                                             </span>
                                         </div>
@@ -656,17 +642,17 @@ export function OrderHistory({
 
                                     {/* Action Buttons for Cancellable Orders */}
                                     {["Reserved", "Paid"].includes(selectedOrder.status) && (
-                                        <div className="mt-5 space-y-2 border-t border-stone-100 pt-4">
+                                        <div className="mt-5 space-y-2 border-t border-[#E8E3DB] pt-4">
                                             {confirmCancelId === selectedOrder.id ? (
-                                                <div className="rounded-xl border border-rose-200 bg-rose-50/50 p-3 text-center space-y-2.5">
-                                                    <p className="text-xs font-bold text-rose-900">
-                                                        Cancel this order and restore stock?
+                                                <div className="rounded-xl border border-[#F8C8C8] bg-[#FDF2F2] p-3 text-center space-y-2.5">
+                                                    <p className="text-xs font-bold text-[#9B2C2C]">
+                                                        Cancel this order and release inventory?
                                                     </p>
                                                     <div className="grid grid-cols-2 gap-2">
                                                         <button
                                                             type="button"
                                                             onClick={() => setConfirmCancelId(null)}
-                                                            className="h-8.5 rounded-xl border border-stone-200 bg-white px-3 text-xs font-bold text-stone-700 hover:bg-stone-50 active:scale-95 transition-all shadow-2xs"
+                                                            className="h-8.5 rounded-xl border border-[#E8E3DB] bg-white px-3 text-xs font-bold text-[#1C1917] hover:bg-[#FAF8F5] active:scale-95 transition-all shadow-2xs"
                                                         >
                                                             Keep Order
                                                         </button>
@@ -674,12 +660,12 @@ export function OrderHistory({
                                                             type="button"
                                                             onClick={() => void handleCancel()}
                                                             disabled={cancelling}
-                                                            className="inline-flex h-8.5 items-center justify-center gap-1.5 rounded-xl bg-rose-600 px-3 text-xs font-bold text-white hover:bg-rose-700 disabled:opacity-50 active:scale-95 transition-all shadow-xs"
+                                                            className="inline-flex h-8.5 items-center justify-center gap-1.5 rounded-xl bg-[#9B2C2C] px-3 text-xs font-bold text-white hover:bg-[#7D2323] disabled:opacity-50 active:scale-95 transition-all shadow-2xs"
                                                         >
                                                             {cancelling && (
                                                                 <Loader2 className="size-3.5 animate-spin" />
                                                             )}
-                                                            {cancelling ? "Releasing..." : "Yes, Cancel"}
+                                                            {cancelling ? "Releasing..." : "Confirm Cancel"}
                                                         </button>
                                                     </div>
                                                 </div>
@@ -688,9 +674,9 @@ export function OrderHistory({
                                                     type="button"
                                                     onClick={() => void handleCancel()}
                                                     disabled={cancelling}
-                                                    className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-white px-3 text-xs font-bold text-rose-700 hover:bg-rose-50 disabled:opacity-50 active:scale-95 transition-all shadow-2xs"
+                                                    className="flex h-9.5 w-full items-center justify-center gap-1.5 rounded-xl border border-[#F8C8C8] bg-white px-3 text-xs font-bold text-[#9B2C2C] hover:bg-[#FDF2F2] disabled:opacity-50 active:scale-95 transition-all shadow-2xs"
                                                 >
-                                                    Cancel Order & Release Stock
+                                                    Cancel Order &amp; Restore Stock
                                                 </button>
                                             )}
                                         </div>

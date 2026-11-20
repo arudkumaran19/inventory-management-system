@@ -400,20 +400,20 @@ export function InventoryView() {
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <div className="flex items-center gap-3">
-                            <div className="flex size-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                            <div className="flex size-10 items-center justify-center rounded-xl bg-[#FEF8EC] text-[#78350F] border border-[#F2DEBA]">
                                 <Package className="size-5" />
                             </div>
                             <div>
                                 <div className="flex items-center gap-2.5">
-                                    <h1 className="text-2xl font-bold tracking-tight text-stone-900">
-                                        Inventory Control
+                                    <h1 className="font-serif-brand text-2xl font-medium tracking-tight text-[#1C1917]">
+                                        Inventory & Stock Control
                                     </h1>
-                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 border border-emerald-200/60">
-                                        <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#EDF6EE] px-2.5 py-0.5 text-xs font-medium text-[#4E6047] border border-[#CFDFCF]">
+                                        <span className="size-1.5 rounded-full bg-[#4E6047] animate-pulse" />
                                         Live Sync (4s)
                                     </span>
                                 </div>
-                                <p className="text-xs text-stone-500 mt-0.5">
+                                <p className="text-xs text-[#78716C] mt-0.5">
                                     Real-time inventory levels, dynamic stock reservations, and catalog management.
                                 </p>
                             </div>
@@ -425,12 +425,12 @@ export function InventoryView() {
                             type="button"
                             onClick={() => void loadProducts()}
                             disabled={loading}
-                            className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-stone-700 shadow-xs hover:bg-stone-50 hover:border-stone-300 transition-all disabled:opacity-50 cursor-pointer"
+                            className="inline-flex items-center gap-2 rounded-xl border border-[#E8E3DB] bg-white px-3.5 py-2.5 text-xs font-semibold text-[#1C1917] shadow-xs hover:bg-[#FAF8F5] hover:border-[#D6CEC4] transition-all disabled:opacity-50 cursor-pointer"
                         >
                             <RefreshCw
                                 className={[
                                     "size-3.5",
-                                    loading ? "animate-spin text-amber-600" : "text-stone-500",
+                                    loading ? "animate-spin text-[#78350F]" : "text-[#78716C]",
                                 ].join(" ")}
                             />
                             Refresh
@@ -439,9 +439,9 @@ export function InventoryView() {
                         <button
                             type="button"
                             onClick={openCreateForm}
-                            className="inline-flex items-center gap-2 rounded-xl bg-stone-900 px-4 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-stone-800 transition-all cursor-pointer active:scale-98"
+                            className="inline-flex items-center gap-2 rounded-xl bg-[#78350F] px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-[#5C2B09] transition-all cursor-pointer active:scale-98"
                         >
-                            <Plus className="size-4 text-amber-400" />
+                            <Plus className="size-4 text-[#FDE68A]" />
                             Add Product
                         </button>
                     </div>
@@ -450,95 +450,95 @@ export function InventoryView() {
                 {/* KPI Metrics Dashboard Cards */}
                 <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     {/* Active Products */}
-                    <div className="rounded-2xl border border-stone-200/80 bg-white p-5 shadow-xs transition hover:shadow-md hover:border-stone-300/80">
+                    <div className="rounded-2xl border border-[#E8E3DB] bg-white p-5 shadow-xs transition hover:shadow-md hover:border-[#D6CEC4]">
                         <div className="flex items-center justify-between">
-                            <span className="text-xs font-medium text-stone-500 uppercase tracking-wider">Active Products</span>
-                            <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100">
+                            <span className="text-[11px] font-semibold text-[#78716C] uppercase tracking-wider">Active Products</span>
+                            <div className="flex size-8 items-center justify-center rounded-lg bg-[#EDF6EE] text-[#4E6047] border border-[#CFDFCF]">
                                 <Package className="size-4" />
                             </div>
                         </div>
                         <div className="mt-3 flex items-baseline gap-2">
-                            <span className="text-3xl font-bold tracking-tight text-stone-900 tnum">
+                            <span className="font-serif-brand text-3xl font-medium tracking-tight text-[#1C1917] tnum">
                                 {activeProducts.length}
                             </span>
-                            <span className="text-xs text-stone-400">items</span>
+                            <span className="text-xs text-[#A8A29E]">items</span>
                         </div>
-                        <p className="mt-1 text-xs text-stone-500">
+                        <p className="mt-1 text-xs text-[#78716C]">
                             Available in POS register catalog
                         </p>
                     </div>
 
                     {/* Archived Products */}
-                    <div className="rounded-2xl border border-stone-200/80 bg-white p-5 shadow-xs transition hover:shadow-md hover:border-stone-300/80">
+                    <div className="rounded-2xl border border-[#E8E3DB] bg-white p-5 shadow-xs transition hover:shadow-md hover:border-[#D6CEC4]">
                         <div className="flex items-center justify-between">
-                            <span className="text-xs font-medium text-stone-500 uppercase tracking-wider">Archived Items</span>
-                            <div className="flex size-8 items-center justify-center rounded-lg bg-stone-100 text-stone-500 border border-stone-200">
+                            <span className="text-[11px] font-semibold text-[#78716C] uppercase tracking-wider">Archived Items</span>
+                            <div className="flex size-8 items-center justify-center rounded-lg bg-[#F5F2EB] text-[#78716C] border border-[#E8E3DB]">
                                 <Archive className="size-4" />
                             </div>
                         </div>
                         <div className="mt-3 flex items-baseline gap-2">
-                            <span className="text-3xl font-bold tracking-tight text-stone-900 tnum">
+                            <span className="font-serif-brand text-3xl font-medium tracking-tight text-[#1C1917] tnum">
                                 {archivedProducts.length}
                             </span>
-                            <span className="text-xs text-stone-400">items</span>
+                            <span className="text-xs text-[#A8A29E]">items</span>
                         </div>
-                        <p className="mt-1 text-xs text-stone-500">
+                        <p className="mt-1 text-xs text-[#78716C]">
                             Preserved for reporting & audit history
                         </p>
                     </div>
 
                     {/* Total Active Units */}
-                    <div className="rounded-2xl border border-stone-200/80 bg-white p-5 shadow-xs transition hover:shadow-md hover:border-stone-300/80">
+                    <div className="rounded-2xl border border-[#E8E3DB] bg-white p-5 shadow-xs transition hover:shadow-md hover:border-[#D6CEC4]">
                         <div className="flex items-center justify-between">
-                            <span className="text-xs font-medium text-stone-500 uppercase tracking-wider">Active Units</span>
-                            <div className="flex size-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600 border border-amber-100">
+                            <span className="text-[11px] font-semibold text-[#78716C] uppercase tracking-wider">Active Units</span>
+                            <div className="flex size-8 items-center justify-center rounded-lg bg-[#FEF8EC] text-[#78350F] border border-[#F2DEBA]">
                                 <Boxes className="size-4" />
                             </div>
                         </div>
                         <div className="mt-3 flex items-baseline gap-2">
-                            <span className="text-3xl font-bold tracking-tight text-stone-900 tnum">
+                            <span className="font-serif-brand text-3xl font-medium tracking-tight text-[#1C1917] tnum">
                                 {activeStock}
                             </span>
-                            <span className="text-xs text-stone-400">units in shelf</span>
+                            <span className="text-xs text-[#A8A29E]">units in shelf</span>
                         </div>
-                        <p className="mt-1 text-xs text-stone-500">
+                        <p className="mt-1 text-xs text-[#78716C]">
                             Unreserved stock ready for sale
                         </p>
                     </div>
 
                     {/* Stock Alerts */}
-                    <div className="rounded-2xl border border-stone-200/80 bg-white p-5 shadow-xs transition hover:shadow-md hover:border-stone-300/80">
+                    <div className="rounded-2xl border border-[#E8E3DB] bg-white p-5 shadow-xs transition hover:shadow-md hover:border-[#D6CEC4]">
                         <div className="flex items-center justify-between">
-                            <span className="text-xs font-medium text-stone-500 uppercase tracking-wider">Stock Alerts</span>
+                            <span className="text-[11px] font-semibold text-[#78716C] uppercase tracking-wider">Stock Alerts</span>
                             <div className={[
                                 "flex size-8 items-center justify-center rounded-lg border",
                                 lowStockCount + outOfStockCount > 0
-                                    ? "bg-rose-50 text-rose-600 border-rose-100"
-                                    : "bg-stone-50 text-stone-400 border-stone-200",
+                                    ? "bg-rose-50 text-rose-700 border-rose-200"
+                                    : "bg-[#F5F2EB] text-[#78716C] border-[#E8E3DB]",
                             ].join(" ")}>
                                 <AlertTriangle className="size-4" />
                             </div>
                         </div>
                         <div className="mt-3 flex items-baseline gap-2">
-                            <span className="text-3xl font-bold tracking-tight text-stone-900 tnum">
+                            <span className="font-serif-brand text-3xl font-medium tracking-tight text-[#1C1917] tnum">
                                 {lowStockCount + outOfStockCount}
                             </span>
-                            <span className="text-xs text-stone-400">attention required</span>
+                            <span className="text-xs text-[#A8A29E]">attention required</span>
                         </div>
-                        <p className="mt-1 text-xs text-stone-500">
+                        <p className="mt-1 text-xs text-[#78716C]">
                             {lowStockCount} low stock · {outOfStockCount} depleted
                         </p>
                     </div>
                 </div>
 
                 {/* Main Product Table & Filter Card */}
-                <div className="mt-6 overflow-hidden rounded-2xl border border-stone-200/80 bg-white shadow-xs">
-                    <div className="flex flex-col gap-3 border-b border-stone-100 p-4 sm:flex-row sm:items-center sm:justify-between bg-stone-50/40">
+                <div className="mt-6 overflow-hidden rounded-2xl border border-[#E8E3DB] bg-white shadow-xs">
+                    <div className="flex flex-col gap-3 border-b border-[#E8E3DB] p-4 sm:flex-row sm:items-center sm:justify-between bg-[#FAF8F5]/80">
                         <div className="flex items-center gap-3">
-                            <span className="text-sm font-semibold text-stone-900">
+                            <span className="text-sm font-semibold text-[#1C1917]">
                                 Product Catalog
                             </span>
-                            <span className="inline-flex items-center rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-600 border border-stone-200/60 tnum">
+                            <span className="inline-flex items-center rounded-full bg-[#F5F2EB] px-2.5 py-0.5 text-xs font-medium text-[#78716C] border border-[#E8E3DB] tnum">
                                 {filteredProducts.length} of {products.length} products
                             </span>
                         </div>
@@ -546,7 +546,7 @@ export function InventoryView() {
                         <div className="flex w-full flex-col gap-2.5 sm:w-auto sm:flex-row sm:items-center">
                             {/* Search Input */}
                             <div className="relative w-full sm:w-64">
-                                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-stone-400" />
+                                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#A8A29E]" />
                                 <input
                                     type="search"
                                     value={search}
@@ -554,13 +554,13 @@ export function InventoryView() {
                                         setSearch(event.target.value)
                                     }
                                     placeholder="Search products..."
-                                    className="w-full rounded-xl border border-stone-200 bg-white py-2 pl-9 pr-8 text-xs outline-none transition placeholder:text-stone-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/15"
+                                    className="w-full rounded-xl border border-[#E8E3DB] bg-white py-2 pl-9 pr-8 text-xs outline-none transition placeholder:text-[#A8A29E] focus:border-[#78350F] focus:ring-2 focus:ring-[#78350F]/15"
                                 />
                                 {search && (
                                     <button
                                         type="button"
                                         onClick={() => setSearch("")}
-                                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 cursor-pointer"
+                                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#A8A29E] hover:text-[#1C1917] cursor-pointer"
                                     >
                                         <X className="size-3.5" />
                                     </button>
@@ -568,7 +568,7 @@ export function InventoryView() {
                             </div>
 
                             {/* Status Filter Tabs / Select */}
-                            <div className="flex rounded-xl border border-stone-200 bg-white p-0.5 shadow-2xs">
+                            <div className="flex rounded-xl border border-[#E8E3DB] bg-white p-0.5 shadow-2xs">
                                 {(
                                     [
                                         { id: "all", label: "All", count: products.length },
@@ -583,16 +583,16 @@ export function InventoryView() {
                                         className={[
                                             "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-all cursor-pointer",
                                             statusFilter === tab.id
-                                                ? "bg-stone-900 text-white shadow-2xs"
-                                                : "text-stone-600 hover:text-stone-900 hover:bg-stone-50",
+                                                ? "bg-[#78350F] text-white shadow-2xs"
+                                                : "text-[#78716C] hover:text-[#1C1917] hover:bg-[#FAF8F5]",
                                         ].join(" ")}
                                     >
                                         <span>{tab.label}</span>
                                         <span className={[
                                             "text-[10px] rounded-full px-1.5 py-0.2 tnum",
                                             statusFilter === tab.id
-                                                ? "bg-stone-800 text-stone-300"
-                                                : "bg-stone-100 text-stone-500",
+                                                ? "bg-[#5C2B09] text-amber-200"
+                                                : "bg-[#F5F2EB] text-[#78716C]",
                                         ].join(" ")}>
                                             {tab.count}
                                         </span>
@@ -606,13 +606,13 @@ export function InventoryView() {
                     {loading ? (
                         <div className="flex min-h-80 items-center justify-center">
                             <div className="text-center">
-                                <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 border border-amber-100 shadow-2xs">
+                                <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-[#FEF8EC] text-[#78350F] border border-[#F2DEBA] shadow-2xs">
                                     <RefreshCw className="size-6 animate-spin" />
                                 </div>
-                                <p className="mt-3 text-sm font-semibold text-stone-800">
+                                <p className="mt-3 text-sm font-semibold text-[#1C1917]">
                                     Synchronizing Inventory...
                                 </p>
-                                <p className="mt-1 text-xs text-stone-400">
+                                <p className="mt-1 text-xs text-[#78716C]">
                                     Fetching current product stock and reservation states
                                 </p>
                             </div>
@@ -620,17 +620,17 @@ export function InventoryView() {
                     ) : filteredProducts.length === 0 ? (
                         <div className="flex min-h-80 items-center justify-center px-6">
                             <div className="text-center max-w-sm">
-                                <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-stone-100 text-stone-400 border border-stone-200/80">
+                                <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-[#F5F2EB] text-[#A8A29E] border border-[#E8E3DB]">
                                     <Package className="size-7" />
                                 </div>
 
-                                <p className="mt-4 text-sm font-semibold text-stone-900">
+                                <p className="mt-4 font-serif-brand text-lg font-medium text-[#1C1917]">
                                     {search || statusFilter !== "all"
                                         ? "No matching products found"
                                         : "No products in catalog"}
                                 </p>
 
-                                <p className="mt-1 text-xs text-stone-500 leading-relaxed">
+                                <p className="mt-1 text-xs text-[#78716C] leading-relaxed">
                                     {search
                                         ? `No products matched "${search}". Try searching by another keyword or reset the filter.`
                                         : statusFilter === "archived"
@@ -647,7 +647,7 @@ export function InventoryView() {
                                             setSearch("")
                                             setStatusFilter("all")
                                         }}
-                                        className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-stone-700 shadow-xs hover:bg-stone-50 transition cursor-pointer"
+                                        className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-[#E8E3DB] bg-white px-3.5 py-1.5 text-xs font-semibold text-[#1C1917] shadow-xs hover:bg-[#FAF8F5] transition cursor-pointer"
                                     >
                                         <X className="size-3.5" />
                                         Clear Search & Filters
@@ -656,9 +656,9 @@ export function InventoryView() {
                                     <button
                                         type="button"
                                         onClick={openCreateForm}
-                                        className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-stone-900 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-stone-800 transition cursor-pointer"
+                                        className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-[#78350F] px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#5C2B09] transition cursor-pointer"
                                     >
-                                        <Plus className="size-3.5 text-amber-400" />
+                                        <Plus className="size-3.5 text-[#FDE68A]" />
                                         Add First Product
                                     </button>
                                 )}
@@ -668,7 +668,7 @@ export function InventoryView() {
                         <div className="overflow-x-auto">
                             <table className="w-full min-w-[760px] text-left">
                                 <thead>
-                                    <tr className="border-b border-stone-100 bg-stone-50/75 text-[11px] font-semibold uppercase tracking-wider text-stone-500">
+                                    <tr className="border-b border-[#E8E3DB] bg-[#F8F5EE] text-[11px] font-semibold uppercase tracking-wider text-[#78716C]">
                                         <th className="px-5 py-3.5">
                                             Product
                                         </th>
@@ -687,7 +687,7 @@ export function InventoryView() {
                                     </tr>
                                 </thead>
 
-                                <tbody className="divide-y divide-stone-100">
+                                <tbody className="divide-y divide-[#E8E3DB]/60">
                                     {filteredProducts.map((product) => {
                                         const stockClasses = getStockClasses(product.available_stock)
                                         const stockLabel = getStockLabel(product.available_stock)
@@ -695,21 +695,21 @@ export function InventoryView() {
                                         return (
                                             <tr
                                                 key={product.id}
-                                                className="transition-colors hover:bg-amber-50/20 group"
+                                                className="transition-colors hover:bg-[#FAF8F5] group"
                                             >
                                                 {/* Product Details */}
                                                 <td className="px-5 py-4">
                                                     <div className="flex items-center gap-3.5">
-                                                        <div className="flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-50 to-amber-100/60 border border-amber-200/50 text-amber-800 shadow-2xs font-semibold text-xs shrink-0">
+                                                        <div className="flex size-10 items-center justify-center rounded-xl bg-[#FEF8EC] border border-[#F2DEBA] text-[#78350F] shadow-2xs font-semibold text-xs shrink-0 font-serif-brand">
                                                             {product.name.slice(0, 2).toUpperCase()}
                                                         </div>
 
                                                         <div>
-                                                            <p className="text-sm font-semibold text-stone-900 group-hover:text-amber-900 transition-colors">
+                                                            <p className="text-sm font-semibold text-[#1C1917] group-hover:text-[#78350F] transition-colors">
                                                                 {product.name}
                                                             </p>
                                                             <div className="flex items-center gap-1.5 mt-0.5">
-                                                                <span className="text-[11px] font-medium text-stone-400 tnum">
+                                                                <span className="text-[11px] font-medium text-[#A8A29E] tnum">
                                                                     ID #{product.id}
                                                                 </span>
                                                             </div>
@@ -719,7 +719,7 @@ export function InventoryView() {
 
                                                 {/* Price */}
                                                 <td className="px-5 py-4">
-                                                    <span className="text-sm font-bold text-stone-900 tnum">
+                                                    <span className="text-sm font-bold text-[#1C1917] tnum">
                                                         {formatPrice(product.price)}
                                                     </span>
                                                 </td>
@@ -734,15 +734,15 @@ export function InventoryView() {
                                                                     ? "text-rose-600"
                                                                     : product.available_stock <= 5
                                                                         ? "text-amber-700"
-                                                                        : "text-stone-900",
+                                                                        : "text-[#1C1917]",
                                                             ].join(" ")}>
                                                                 {product.available_stock}
                                                             </span>
-                                                            <span className="text-xs text-stone-400">units available</span>
+                                                            <span className="text-xs text-[#A8A29E]">units available</span>
                                                         </div>
 
                                                         {/* Visual mini stock bar */}
-                                                        <div className="h-1.5 w-28 rounded-full bg-stone-100 overflow-hidden">
+                                                        <div className="h-1.5 w-28 rounded-full bg-[#E8E3DB] overflow-hidden">
                                                             <div
                                                                 className={[
                                                                     "h-full rounded-full transition-all",
@@ -750,7 +750,7 @@ export function InventoryView() {
                                                                         ? "bg-rose-500 w-0"
                                                                         : product.available_stock <= 5
                                                                             ? "bg-amber-500"
-                                                                            : "bg-emerald-500",
+                                                                            : "bg-[#4E6047]",
                                                                 ].join(" ")}
                                                                 style={{
                                                                     width: `${Math.min(100, Math.max(8, product.available_stock * 5))}%`,
@@ -767,14 +767,14 @@ export function InventoryView() {
                                                             className={[
                                                                 "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold border",
                                                                 product.is_active
-                                                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200/80"
-                                                                    : "bg-stone-100 text-stone-600 border-stone-200/80",
+                                                                    ? "bg-[#EDF6EE] text-[#4E6047] border-[#CFDFCF]"
+                                                                    : "bg-[#F5F2EB] text-[#78716C] border-[#E8E3DB]",
                                                             ].join(" ")}
                                                         >
                                                             <span
                                                                 className={[
                                                                     "size-1.5 rounded-full",
-                                                                    product.is_active ? "bg-emerald-500" : "bg-stone-400",
+                                                                    product.is_active ? "bg-[#4E6047]" : "bg-[#A8A29E]",
                                                                 ].join(" ")}
                                                             />
                                                             {product.is_active ? "Active" : "Archived"}
@@ -800,9 +800,9 @@ export function InventoryView() {
                                                         <button
                                                             type="button"
                                                             onClick={() => openEditForm(product)}
-                                                            className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-stone-700 shadow-2xs hover:bg-stone-50 hover:border-stone-300 transition cursor-pointer"
+                                                            className="inline-flex items-center gap-1.5 rounded-lg border border-[#E8E3DB] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#1C1917] shadow-2xs hover:bg-[#FAF8F5] hover:border-[#D6CEC4] transition cursor-pointer"
                                                         >
-                                                            <Edit3 className="size-3.5 text-stone-500" />
+                                                            <Edit3 className="size-3.5 text-[#78716C]" />
                                                             Edit
                                                         </button>
 
@@ -818,7 +818,7 @@ export function InventoryView() {
                                                                 "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition cursor-pointer disabled:opacity-50",
                                                                 product.is_active
                                                                     ? "border-amber-200 bg-amber-50/50 text-amber-800 hover:bg-amber-100/60"
-                                                                    : "border-emerald-200 bg-emerald-50/50 text-emerald-800 hover:bg-emerald-100/60",
+                                                                    : "border-[#CFDFCF] bg-[#EDF6EE]/50 text-[#4E6047] hover:bg-[#EDF6EE]",
                                                             ].join(" ")}
                                                         >
                                                             {archivingId === product.id ? (
@@ -843,7 +843,7 @@ export function InventoryView() {
                                                             type="button"
                                                             onClick={() => void handleDelete(product)}
                                                             disabled={deletingId === product.id}
-                                                            className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50/30 px-2.5 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100/60 transition cursor-pointer disabled:opacity-50"
+                                                            className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50/50 px-2.5 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100 transition cursor-pointer disabled:opacity-50"
                                                         >
                                                             <Trash2 className="size-3.5" />
                                                             {deletingId === product.id ? "Deleting..." : "Delete"}
@@ -862,25 +862,25 @@ export function InventoryView() {
 
             {/* Modal / Dialog for Create or Edit Product */}
             {isFormOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/40 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-                    <div className="w-full max-w-lg rounded-2xl border border-stone-200/80 bg-white shadow-2xl overflow-hidden">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+                    <div className="w-full max-w-lg rounded-3xl border border-[#E8E3DB] bg-white shadow-2xl overflow-hidden">
                         {/* Modal Header */}
-                        <div className="flex items-center justify-between border-b border-stone-100 bg-stone-50/60 px-6 py-4">
+                        <div className="flex items-center justify-between border-b border-[#E8E3DB] bg-[#FAF8F5] px-6 py-4">
                             <div className="flex items-center gap-3">
-                                <div className="flex size-9 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                                <div className="flex size-9 items-center justify-center rounded-xl bg-[#FEF8EC] text-[#78350F] border border-[#F2DEBA]">
                                     {editingProduct ? (
                                         <Edit3 className="size-4" />
                                     ) : (
-                                        <Sparkles className="size-4 text-amber-500" />
+                                        <Sparkles className="size-4 text-[#78350F]" />
                                     )}
                                 </div>
                                 <div>
-                                    <h2 className="text-base font-bold text-stone-900">
+                                    <h2 className="font-serif-brand text-base font-bold text-[#1C1917]">
                                         {editingProduct
                                             ? `Edit "${editingProduct.name}"`
                                             : "Add New Product"}
                                     </h2>
-                                    <p className="text-xs text-stone-500">
+                                    <p className="text-xs text-[#78716C]">
                                         {editingProduct
                                             ? "Update product details, pricing, and stock inventory."
                                             : "Add a brand new item to the POS catalog."}
@@ -892,7 +892,7 @@ export function InventoryView() {
                                 type="button"
                                 onClick={closeForm}
                                 disabled={saving}
-                                className="rounded-lg p-1.5 text-stone-400 hover:bg-stone-100 hover:text-stone-700 transition disabled:opacity-50 cursor-pointer"
+                                className="rounded-lg p-1.5 text-[#78716C] hover:bg-[#F5F2EB] hover:text-[#1C1917] transition disabled:opacity-50 cursor-pointer"
                                 aria-label="Close"
                             >
                                 <X className="size-5" />
@@ -914,7 +914,7 @@ export function InventoryView() {
                             <div>
                                 <label
                                     htmlFor="product-name"
-                                    className="mb-1.5 block text-xs font-bold text-stone-700 uppercase tracking-wider"
+                                    className="mb-1.5 block text-xs font-bold text-[#1C1917] uppercase tracking-wider"
                                 >
                                     Product Name
                                 </label>
@@ -930,7 +930,7 @@ export function InventoryView() {
                                     }
                                     placeholder="e.g. Vanilla Bean Latte"
                                     disabled={saving}
-                                    className="w-full rounded-xl border border-stone-200 bg-stone-50/50 px-3.5 py-2.5 text-sm text-stone-900 outline-none transition placeholder:text-stone-400 focus:bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 disabled:bg-stone-100"
+                                    className="w-full rounded-xl border border-[#E8E3DB] bg-[#FAF8F5]/60 px-3.5 py-2.5 text-sm text-[#1C1917] outline-none transition placeholder:text-[#A8A29E] focus:bg-white focus:border-[#78350F] focus:ring-2 focus:ring-[#78350F]/20 disabled:bg-[#F5F2EB]"
                                 />
                             </div>
 
@@ -938,12 +938,12 @@ export function InventoryView() {
                                 <div>
                                     <label
                                         htmlFor="product-price"
-                                        className="mb-1.5 block text-xs font-bold text-stone-700 uppercase tracking-wider"
+                                        className="mb-1.5 block text-xs font-bold text-[#1C1917] uppercase tracking-wider"
                                     >
                                         Price (USD)
                                     </label>
                                     <div className="relative">
-                                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-semibold text-stone-400">
+                                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-semibold text-[#A8A29E]">
                                             $
                                         </span>
                                         <input
@@ -960,7 +960,7 @@ export function InventoryView() {
                                             }
                                             placeholder="4.50"
                                             disabled={saving}
-                                            className="w-full rounded-xl border border-stone-200 bg-stone-50/50 py-2.5 pl-8 pr-3.5 text-sm font-semibold text-stone-900 outline-none transition placeholder:text-stone-400 focus:bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 disabled:bg-stone-100 tnum"
+                                            className="w-full rounded-xl border border-[#E8E3DB] bg-[#FAF8F5]/60 py-2.5 pl-8 pr-3.5 text-sm font-semibold text-[#1C1917] outline-none transition placeholder:text-[#A8A29E] focus:bg-white focus:border-[#78350F] focus:ring-2 focus:ring-[#78350F]/20 disabled:bg-[#F5F2EB] tnum"
                                         />
                                     </div>
                                 </div>
@@ -968,7 +968,7 @@ export function InventoryView() {
                                 <div>
                                     <label
                                         htmlFor="product-stock"
-                                        className="mb-1.5 block text-xs font-bold text-stone-700 uppercase tracking-wider"
+                                        className="mb-1.5 block text-xs font-bold text-[#1C1917] uppercase tracking-wider"
                                     >
                                         Available Units
                                     </label>
@@ -986,17 +986,17 @@ export function InventoryView() {
                                         }
                                         placeholder="25"
                                         disabled={saving}
-                                        className="w-full rounded-xl border border-stone-200 bg-stone-50/50 px-3.5 py-2.5 text-sm font-semibold text-stone-900 outline-none transition placeholder:text-stone-400 focus:bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 disabled:bg-stone-100 tnum"
+                                        className="w-full rounded-xl border border-[#E8E3DB] bg-[#FAF8F5]/60 px-3.5 py-2.5 text-sm font-semibold text-[#1C1917] outline-none transition placeholder:text-[#A8A29E] focus:bg-white focus:border-[#78350F] focus:ring-2 focus:ring-[#78350F]/20 disabled:bg-[#F5F2EB] tnum"
                                     />
                                 </div>
                             </div>
 
-                            <div className="flex justify-end gap-2.5 border-t border-stone-100 pt-5">
+                            <div className="flex justify-end gap-2.5 border-t border-[#E8E3DB] pt-5">
                                 <button
                                     type="button"
                                     onClick={closeForm}
                                     disabled={saving}
-                                    className="rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-xs font-semibold text-stone-700 shadow-2xs hover:bg-stone-50 transition disabled:opacity-50 cursor-pointer"
+                                    className="rounded-xl border border-[#E8E3DB] bg-white px-4 py-2.5 text-xs font-semibold text-[#1C1917] shadow-2xs hover:bg-[#FAF8F5] transition disabled:opacity-50 cursor-pointer"
                                 >
                                     Cancel
                                 </button>
@@ -1004,10 +1004,10 @@ export function InventoryView() {
                                 <button
                                     type="submit"
                                     disabled={saving}
-                                    className="inline-flex items-center gap-2 rounded-xl bg-stone-900 px-5 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-stone-800 transition disabled:opacity-50 cursor-pointer active:scale-98"
+                                    className="inline-flex items-center gap-2 rounded-xl bg-[#78350F] px-5 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-[#5C2B09] transition disabled:opacity-50 cursor-pointer active:scale-98"
                                 >
                                     {saving && (
-                                        <RefreshCw className="size-3.5 animate-spin text-amber-400" />
+                                        <RefreshCw className="size-3.5 animate-spin text-[#FDE68A]" />
                                     )}
 
                                     {editingProduct

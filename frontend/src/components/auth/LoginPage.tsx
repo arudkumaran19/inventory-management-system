@@ -8,6 +8,7 @@ import {
     KeyRound,
     Lock,
     Mail,
+    Sparkles,
 } from "lucide-react"
 import { useAuth } from "../../context/AuthContext"
 
@@ -40,60 +41,92 @@ export function LoginPage() {
         }
     }
 
+    const fillDemoCredentials = (demoEmail: string, demoPass: string) => {
+        setEmail(demoEmail)
+        setPassword(demoPass)
+        setLocalError(null)
+        clearError()
+    }
+
     const activeError = localError || error
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-[#100e0c] px-4 py-12 select-none">
-            {/* Background ambient glow */}
+        <div className="flex min-h-screen items-center justify-center bg-[#FAF8F5] px-4 py-12 select-none">
+            {/* Subtle background ambient warmth */}
             <div className="pointer-events-none fixed inset-0 overflow-hidden">
-                <div className="absolute -top-40 left-1/2 -translate-x-1/2 size-96 rounded-full bg-amber-600/10 blur-3xl" />
-                <div className="absolute -bottom-40 left-1/2 -translate-x-1/2 size-96 rounded-full bg-amber-700/5 blur-3xl" />
+                <div className="absolute -top-32 left-1/2 -translate-x-1/2 size-96 rounded-full bg-[#78350F]/5 blur-3xl" />
+                <div className="absolute -bottom-32 left-1/2 -translate-x-1/2 size-96 rounded-full bg-[#4E6047]/5 blur-3xl" />
             </div>
 
             <div className="relative w-full max-w-md">
                 {/* Brand Card */}
-                <div className="rounded-3xl border border-stone-800/80 bg-[#161412]/90 p-8 shadow-2xl backdrop-blur-2xl">
+                <div className="rounded-3xl border border-[#E8E3DB] bg-white p-8 shadow-xl shadow-[#78350F]/5">
                     {/* Header */}
                     <div className="text-center">
                         <div className="inline-flex items-center justify-center">
-                            <div className="relative flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 via-amber-600 to-amber-700 text-white shadow-lg shadow-amber-600/30">
-                                <Coffee className="size-7" />
-                                <span className="absolute -top-1 -right-1 size-3 rounded-full bg-emerald-400 ring-4 ring-[#161412]" />
+                            <div className="relative flex size-14 items-center justify-center rounded-2xl bg-[#78350F] text-white shadow-md shadow-[#78350F]/20">
+                                <Coffee className="size-7 text-[#F5F1EA]" />
+                                <span className="absolute -top-1 -right-1 size-3 rounded-full bg-[#4E6047] ring-4 ring-white" />
                             </div>
                         </div>
 
                         <div className="mt-4 flex items-center justify-center gap-2">
-                            <h1 className="text-xl font-bold tracking-tight text-stone-100">
-                                Inventory &amp; POS
+                            <h1 className="font-serif-brand text-2xl font-bold tracking-tight text-[#1C1917]">
+                                Artisan Café
                             </h1>
-                            <span className="rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-bold tracking-widest text-amber-300 uppercase">
-                                System
+                            <span className="rounded-md bg-[#78350F]/10 px-2 py-0.5 text-[11px] font-bold tracking-widest text-[#78350F] uppercase">
+                                POS
                             </span>
                         </div>
-                        <p className="mt-1 text-xs font-medium text-stone-400">
-                            Point-of-Sale &amp; Inventory Management · Secure Operator Login
+                        <p className="mt-1.5 text-xs font-medium text-[#78716C]">
+                            Handcrafted Coffee Roasters · Register Terminal Sign-In
                         </p>
+                    </div>
+
+                    {/* Quick-fill helper badges */}
+                    <div className="mt-5 rounded-2xl border border-[#E8E3DB] bg-[#FAF8F5] p-3 text-center">
+                        <p className="text-[11px] font-semibold text-[#78716C]">
+                            Quick Operator Sign-In:
+                        </p>
+                        <div className="mt-2 flex items-center justify-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() => fillDemoCredentials("manager@example.com", "ManagerPass123!")}
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-[#D8D1C5] bg-white px-2.5 py-1 text-xs font-semibold text-[#1C1917] hover:border-[#78350F] hover:text-[#78350F] transition-colors"
+                            >
+                                <Sparkles className="size-3 text-[#78350F]" />
+                                Manager
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => fillDemoCredentials("cashier@example.com", "CashierPass123!")}
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-[#D8D1C5] bg-white px-2.5 py-1 text-xs font-semibold text-[#1C1917] hover:border-[#4E6047] hover:text-[#4E6047] transition-colors"
+                            >
+                                <Sparkles className="size-3 text-[#4E6047]" />
+                                Cashier
+                            </button>
+                        </div>
                     </div>
 
                     {/* Error Banner */}
                     {activeError && (
-                        <div className="mt-6 flex items-start gap-3 rounded-2xl border border-rose-900/50 bg-rose-950/40 p-3.5 text-xs text-rose-300 animate-in fade-in slide-in-from-top-2 duration-150">
-                            <AlertCircle className="size-4.5 shrink-0 text-rose-400 mt-0.5" />
+                        <div className="mt-5 flex items-start gap-3 rounded-2xl border border-[#F8C8C8] bg-[#FDF2F2] p-3.5 text-xs text-[#9B2C2C] animate-in fade-in slide-in-from-top-2 duration-150">
+                            <AlertCircle className="size-4 shrink-0 text-[#9B2C2C] mt-0.5" />
                             <div className="flex-1">
-                                <p className="font-semibold text-rose-200">Sign-in Failed</p>
-                                <p className="mt-0.5 text-rose-300/90 leading-relaxed">{activeError}</p>
+                                <p className="font-semibold text-[#9B2C2C]">Sign-in Failed</p>
+                                <p className="mt-0.5 text-[#9B2C2C]/90 leading-relaxed">{activeError}</p>
                             </div>
                         </div>
                     )}
 
                     {/* Login Form */}
-                    <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+                    <form onSubmit={handleSubmit} className="mt-5 space-y-4">
                         <div>
-                            <label className="block text-xs font-semibold text-stone-300 mb-1.5">
+                            <label className="block text-xs font-semibold text-[#292524] mb-1.5">
                                 Operator Email
                             </label>
                             <div className="relative">
-                                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-stone-500">
+                                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-[#A8A29E]">
                                     <Mail className="size-4" />
                                 </div>
                                 <input
@@ -105,17 +138,17 @@ export function LoginPage() {
                                         if (activeError) setLocalError(null)
                                     }}
                                     placeholder="operator@example.com"
-                                    className="w-full rounded-xl border border-stone-800 bg-stone-900/80 py-2.5 pl-10 pr-4 text-sm text-stone-100 placeholder-stone-600 transition-colors focus:border-amber-500 focus:bg-stone-900 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                    className="w-full rounded-xl border border-[#E8E3DB] bg-[#FAF8F5] py-2.5 pl-10 pr-4 text-sm text-[#1C1917] placeholder-[#A8A29E] transition-colors focus:border-[#78350F] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#78350F]/15"
                                 />
                             </div>
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-stone-300 mb-1.5">
+                            <label className="block text-xs font-semibold text-[#292524] mb-1.5">
                                 Terminal Passcode / Password
                             </label>
                             <div className="relative">
-                                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-stone-500">
+                                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-[#A8A29E]">
                                     <Lock className="size-4" />
                                 </div>
                                 <input
@@ -127,13 +160,14 @@ export function LoginPage() {
                                         if (activeError) setLocalError(null)
                                     }}
                                     placeholder="••••••••••••"
-                                    className="w-full rounded-xl border border-stone-800 bg-stone-900/80 py-2.5 pl-10 pr-10 text-sm text-stone-100 placeholder-stone-600 transition-colors focus:border-amber-500 focus:bg-stone-900 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                    className="w-full rounded-xl border border-[#E8E3DB] bg-[#FAF8F5] py-2.5 pl-10 pr-10 text-sm text-[#1C1917] placeholder-[#A8A29E] transition-colors focus:border-[#78350F] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#78350F]/15"
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-stone-500 hover:text-stone-300"
+                                    className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-[#A8A29E] hover:text-[#292524]"
                                     tabIndex={-1}
+                                    aria-label={showPassword ? "Hide password" : "Show password"}
                                 >
                                     {showPassword ? (
                                         <EyeOff className="size-4" />
@@ -147,7 +181,7 @@ export function LoginPage() {
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 py-3 text-sm font-semibold text-white shadow-lg shadow-amber-600/25 transition-all hover:from-amber-500 hover:to-amber-600 hover:shadow-amber-500/35 active:scale-[0.99] disabled:opacity-50"
+                            className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-[#78350F] py-3 text-sm font-semibold text-white shadow-md shadow-[#78350F]/15 transition-all hover:bg-[#5A270B] active:scale-[0.99] disabled:opacity-50"
                         >
                             {isSubmitting ? (
                                 <>
@@ -164,9 +198,9 @@ export function LoginPage() {
                     </form>
 
                     {/* Security Footer Note */}
-                    <div className="mt-8 border-t border-stone-800/80 pt-6 flex items-center justify-center gap-1.5 text-[10px] text-stone-500">
-                        <CheckCircle2 className="size-3 text-emerald-500" />
-                        <span>HttpOnly Session · Server-Enforced RBAC · DB Revocation</span>
+                    <div className="mt-7 border-t border-[#E8E3DB] pt-5 flex items-center justify-center gap-1.5 text-[11px] text-[#78716C]">
+                        <CheckCircle2 className="size-3.5 text-[#4E6047]" />
+                        <span>HttpOnly Session · Role-Enforced RBAC · DB Revocation</span>
                     </div>
                 </div>
             </div>

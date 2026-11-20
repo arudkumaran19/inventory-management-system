@@ -8,7 +8,6 @@ import {
     Trash2,
     X,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 
 export type CartItem = {
     id: number
@@ -51,18 +50,18 @@ export function CartPanel({
     )
 
     return (
-        <section className="flex h-full min-h-0 w-full flex-col bg-white border-l border-stone-200/80 select-none">
+        <section className="flex h-full min-h-0 w-full flex-col bg-white border-l border-[#E8E3DB] select-none">
             {/* Cart Header */}
-            <div className="flex items-center justify-between border-b border-stone-200/80 bg-stone-50/50 px-5 py-4">
+            <div className="flex items-center justify-between border-b border-[#E8E3DB] bg-[#FAF8F5] px-5 py-3.5">
                 <div>
                     <div className="flex items-center gap-2">
-                        <Receipt className="size-4.5 text-stone-800" />
-                        <h2 className="text-sm font-bold tracking-tight text-stone-900">
-                            Current Register Order
+                        <Receipt className="size-4 text-[#78350F]" />
+                        <h2 className="font-serif-brand text-base font-bold tracking-tight text-[#1C1917]">
+                            Register Ticket
                         </h2>
                     </div>
 
-                    <p className="mt-0.5 text-xs text-stone-500 font-medium">
+                    <p className="mt-0.5 text-xs text-[#78716C] font-medium">
                         {itemCount} {itemCount === 1 ? "item" : "items"} staged
                     </p>
                 </div>
@@ -71,21 +70,21 @@ export function CartPanel({
                     {items.length > 0 && (
                         <span
                             className={[
-                                "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold tracking-wide",
+                                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide",
                                 reservedOrderId
-                                    ? "bg-amber-50 text-amber-800 ring-1 ring-amber-500/30"
-                                    : "bg-stone-100 text-stone-700",
+                                    ? "bg-[#FEF8EC] text-[#8C4E08] border border-[#F7E0B5]"
+                                    : "bg-[#F5F1EA] text-[#57534E] border border-[#E8E3DB]",
                             ].join(" ")}
                         >
                             <span
                                 className={[
                                     "size-1.5 rounded-full",
-                                    reservedOrderId ? "bg-amber-500 animate-pulse" : "bg-stone-400",
+                                    reservedOrderId ? "bg-[#B45309] animate-pulse" : "bg-[#A8A29E]",
                                 ].join(" ")}
                             />
                             {reservedOrderId
-                                ? `Order #${reservedOrderId} Reserved`
-                                : "Draft"}
+                                ? `Order #${reservedOrderId} Hold`
+                                : "Active Ticket"}
                         </span>
                     )}
 
@@ -94,7 +93,7 @@ export function CartPanel({
                             type="button"
                             aria-label="Close cart"
                             onClick={onClose}
-                            className="flex size-8 items-center justify-center rounded-lg text-stone-400 transition-colors hover:bg-stone-200/70 hover:text-stone-900 active:scale-95"
+                            className="flex size-8 items-center justify-center rounded-lg text-[#78716C] transition-colors hover:bg-[#F5F1EA] hover:text-[#1C1917] active:scale-95"
                         >
                             <X className="size-4" />
                         </button>
@@ -105,37 +104,37 @@ export function CartPanel({
             {/* Cart Body */}
             {items.length === 0 ? (
                 <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-                    <div className="relative flex size-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-700 ring-1 ring-amber-200/60 shadow-xs">
-                        <Coffee className="size-6" />
-                        <span className="absolute -bottom-1 -right-1 flex size-5 items-center justify-center rounded-full bg-stone-900 text-white">
+                    <div className="relative flex size-14 items-center justify-center rounded-2xl bg-[#FAF8F5] text-[#78350F] border border-[#E8E3DB] shadow-xs">
+                        <Coffee className="size-6 text-[#78350F]" />
+                        <span className="absolute -bottom-1 -right-1 flex size-5 items-center justify-center rounded-full bg-[#1C1917] text-white">
                             <ShoppingCart className="size-2.5" />
                         </span>
                     </div>
 
-                    <h3 className="mt-4 text-sm font-bold text-stone-900">
-                        Your cart is empty
+                    <h3 className="mt-4 font-serif-brand text-sm font-bold text-[#1C1917]">
+                        Ticket is Empty
                     </h3>
 
-                    <p className="mt-1 max-w-xs text-xs leading-relaxed text-stone-500">
-                        Select beverages and pastries from the catalog to build a customer order.
+                    <p className="mt-1 max-w-xs text-xs leading-relaxed text-[#78716C]">
+                        Tap any beverage or bakery item from the menu to build a customer order.
                     </p>
                 </div>
             ) : (
                 <>
                     {/* Item list */}
-                    <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3.5 space-y-2.5">
+                    <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 space-y-2">
                         {items.map((item) => (
                             <div
                                 key={item.id}
-                                className="group relative rounded-xl border border-stone-200/80 bg-stone-50/40 p-3 transition-all duration-150 hover:bg-white hover:border-stone-300 hover:shadow-xs"
+                                className="group relative rounded-xl border border-[#E8E3DB] bg-[#FAF8F5]/50 p-2.5 transition-all duration-150 hover:bg-white hover:border-[#D8D1C5] hover:shadow-2xs"
                             >
-                                <div className="flex items-start justify-between gap-3">
+                                <div className="flex items-start justify-between gap-2.5">
                                     <div className="min-w-0">
-                                        <h3 className="truncate text-sm font-bold text-stone-900">
+                                        <h3 className="truncate text-xs font-bold text-[#1C1917]">
                                             {item.name}
                                         </h3>
 
-                                        <p className="tnum mt-0.5 text-xs text-stone-500 font-medium">
+                                        <p className="tnum mt-0.5 text-[11px] text-[#78716C] font-medium">
                                             ${item.price.toFixed(2)} each
                                         </p>
                                     </div>
@@ -145,27 +144,27 @@ export function CartPanel({
                                             type="button"
                                             aria-label={`Remove ${item.name}`}
                                             onClick={() => onRemove?.(item.id)}
-                                            className="flex size-7 shrink-0 items-center justify-center rounded-lg text-stone-400 transition-colors hover:bg-rose-50 hover:text-rose-600 active:scale-95"
+                                            className="flex size-6 shrink-0 items-center justify-center rounded-lg text-[#A8A29E] transition-colors hover:bg-[#FDF2F2] hover:text-[#9B2C2C] active:scale-95"
                                         >
                                             <Trash2 className="size-3.5" />
                                         </button>
                                     )}
                                 </div>
 
-                                <div className="mt-3 flex items-center justify-between">
+                                <div className="mt-2.5 flex items-center justify-between">
                                     {/* Stepper */}
-                                    <div className="flex items-center rounded-lg border border-stone-200 bg-white shadow-xs">
+                                    <div className="flex items-center rounded-lg border border-[#E8E3DB] bg-white shadow-2xs">
                                         <button
                                             type="button"
                                             disabled={Boolean(reservedOrderId)}
                                             aria-label={`Decrease ${item.name} quantity`}
                                             onClick={() => onDecrease?.(item.id)}
-                                            className="flex size-7.5 items-center justify-center text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-900 disabled:cursor-not-allowed disabled:opacity-30 active:scale-90"
+                                            className="flex size-7 items-center justify-center text-[#57534E] transition-colors hover:bg-[#FAF8F5] hover:text-[#1C1917] disabled:cursor-not-allowed disabled:opacity-30 active:scale-90"
                                         >
                                             <Minus className="size-3 stroke-[2.5]" />
                                         </button>
 
-                                        <span className="tnum flex min-w-7 justify-center text-xs font-bold text-stone-900">
+                                        <span className="tnum flex min-w-7 justify-center text-xs font-bold text-[#1C1917]">
                                             {item.quantity}
                                         </span>
 
@@ -174,14 +173,14 @@ export function CartPanel({
                                             disabled={Boolean(reservedOrderId)}
                                             aria-label={`Increase ${item.name} quantity`}
                                             onClick={() => onIncrease?.(item.id)}
-                                            className="flex size-7.5 items-center justify-center text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-900 disabled:cursor-not-allowed disabled:opacity-30 active:scale-90"
+                                            className="flex size-7 items-center justify-center text-[#57534E] transition-colors hover:bg-[#FAF8F5] hover:text-[#1C1917] disabled:cursor-not-allowed disabled:opacity-30 active:scale-90"
                                         >
                                             <Plus className="size-3 stroke-[2.5]" />
                                         </button>
                                     </div>
 
                                     {/* Line total */}
-                                    <p className="tnum text-sm font-extrabold text-stone-900">
+                                    <p className="tnum text-xs font-extrabold text-[#1C1917]">
                                         ${(item.price * item.quantity).toFixed(2)}
                                     </p>
                                 </div>
@@ -190,20 +189,27 @@ export function CartPanel({
                     </div>
 
                     {/* Receipt Summary Footer */}
-                    <div className="border-t border-stone-200/90 bg-stone-50/90 p-5 shadow-xs">
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between text-xs font-medium text-stone-500">
+                    <div className="border-t border-[#E8E3DB] bg-[#FAF8F5] p-4 shadow-xs">
+                        <div className="space-y-1.5">
+                            <div className="flex items-center justify-between text-xs font-medium text-[#78716C]">
                                 <span>Subtotal</span>
-                                <span className="tnum font-semibold text-stone-900">
+                                <span className="tnum font-semibold text-[#1C1917]">
                                     ${subtotal.toFixed(2)}
                                 </span>
                             </div>
 
-                            <div className="flex items-center justify-between border-t border-stone-200/70 pt-2">
-                                <span className="text-sm font-bold text-stone-900">
-                                    Total Amount
+                            <div className="flex items-center justify-between text-xs font-medium text-[#78716C]">
+                                <span>Taxes &amp; Surcharges</span>
+                                <span className="text-[11px] font-medium text-[#4E6047]">
+                                    Included
                                 </span>
-                                <span className="tnum text-xl font-extrabold tracking-tight text-stone-950">
+                            </div>
+
+                            <div className="flex items-center justify-between border-t border-[#E8E3DB] pt-2">
+                                <span className="font-serif-brand text-sm font-bold text-[#1C1917]">
+                                    Grand Total
+                                </span>
+                                <span className="tnum text-xl font-extrabold tracking-tight text-[#1C1917]">
                                     ${subtotal.toFixed(2)}
                                 </span>
                             </div>
@@ -211,42 +217,36 @@ export function CartPanel({
 
                         {/* Checkout CTA */}
                         {reservedOrderId ? (
-                            <Button
+                            <button
                                 type="button"
-                                className="mt-4 h-11 w-full rounded-xl bg-amber-600 text-white font-bold shadow-xs hover:bg-amber-600 cursor-not-allowed"
+                                className="mt-3.5 h-10 w-full rounded-xl bg-[#FEF8EC] border border-[#F7E0B5] text-[#8C4E08] font-bold text-xs shadow-xs cursor-not-allowed flex items-center justify-center gap-2"
                                 disabled
                             >
+                                <span className="size-2 rounded-full bg-[#B45309] animate-pulse" />
                                 Order #{reservedOrderId} · Awaiting Payment
-                            </Button>
+                            </button>
                         ) : (
-                            <Button
+                            <button
                                 type="button"
-                                className="mt-4 h-11 w-full rounded-xl bg-stone-900 text-white font-bold shadow-md shadow-stone-900/10 hover:bg-amber-700 hover:shadow-amber-700/25 transition-all duration-150 active:scale-[0.98]"
+                                className="mt-3.5 flex h-10.5 w-full items-center justify-center gap-2 rounded-xl bg-[#78350F] text-white font-bold text-xs shadow-sm hover:bg-[#5A270B] transition-all duration-150 active:scale-[0.98] disabled:opacity-50"
                                 onClick={onCheckout}
                                 disabled={isCheckingOut}
                             >
                                 {isCheckingOut ? (
                                     <>
-                                        <Loader2 className="mr-2 size-4 animate-spin" />
-                                        Creating Reservation...
+                                        <Loader2 className="size-4 animate-spin text-white" />
+                                        <span>Reserving Stock (5m Hold)...</span>
                                     </>
                                 ) : (
-                                    "Continue to Checkout"
+                                    <span>Proceed to Payment</span>
                                 )}
-                            </Button>
+                            </button>
                         )}
 
-                        <p
-                            className={[
-                                "mt-2.5 text-center text-[11px] leading-4",
-                                reservedOrderId
-                                    ? "font-semibold text-amber-800"
-                                    : "text-stone-400",
-                            ].join(" ")}
-                        >
+                        <p className="mt-2 text-center text-[10px] text-[#A8A29E]">
                             {reservedOrderId
-                                ? `Order #${reservedOrderId} is staged in the payment terminal.`
-                                : "Stock is reserved for 5 minutes during checkout."}
+                                ? `Order #${reservedOrderId} stock hold active in settlement terminal.`
+                                : "Stock is automatically locked for 5 minutes at checkout."}
                         </p>
                     </div>
                 </>

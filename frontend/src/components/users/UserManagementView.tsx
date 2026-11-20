@@ -263,7 +263,7 @@ export function UserManagementView() {
     }
 
     return (
-        <div className="flex-1 space-y-6 p-6 overflow-y-auto max-w-7xl mx-auto">
+        <div className="flex-1 space-y-6 p-6 lg:p-8 overflow-y-auto max-w-7xl mx-auto">
             {toastMessage && (
                 <Toast
                     message={toastMessage}
@@ -275,15 +275,15 @@ export function UserManagementView() {
             {/* Header section */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <div className="flex items-center gap-2">
-                        <div className="flex size-9 items-center justify-center rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/20">
+                    <div className="flex items-center gap-3">
+                        <div className="flex size-10 items-center justify-center rounded-xl bg-[#FEF8EC] text-[#78350F] border border-[#F2DEBA]">
                             <Users className="size-5" />
                         </div>
                         <div>
-                            <h1 className="text-xl font-bold tracking-tight text-stone-100">
+                            <h1 className="font-serif-brand text-2xl font-medium tracking-tight text-[#1C1917]">
                                 Team & Operator Management
                             </h1>
-                            <p className="text-xs text-stone-400">
+                            <p className="text-xs text-[#78716C] mt-0.5">
                                 Provision cashier & manager accounts, manage credentials, and control register privileges.
                             </p>
                         </div>
@@ -295,73 +295,81 @@ export function UserManagementView() {
                         type="button"
                         onClick={() => refreshUsers(true)}
                         disabled={refreshing || loading}
-                        className="flex items-center gap-1.5 rounded-xl border border-stone-800 bg-stone-900/80 px-3 py-2 text-xs font-semibold text-stone-300 transition-colors hover:bg-stone-800 hover:text-white disabled:opacity-50"
+                        className="inline-flex items-center gap-2 rounded-xl border border-[#E8E3DB] bg-white px-3.5 py-2.5 text-xs font-semibold text-[#1C1917] shadow-xs hover:bg-[#FAF8F5] hover:border-[#D6CEC4] transition-all disabled:opacity-50 cursor-pointer"
                         title="Refresh list"
                     >
-                        <RefreshCw className={`size-3.5 ${refreshing ? "animate-spin text-amber-400" : ""}`} />
+                        <RefreshCw className={`size-3.5 ${refreshing ? "animate-spin text-[#78350F]" : "text-[#78716C]"}`} />
                         <span>Refresh</span>
                     </button>
 
                     <button
                         type="button"
                         onClick={openAddModal}
-                        className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 px-4 py-2 text-xs font-semibold text-white shadow-md shadow-amber-600/20 transition-all hover:from-amber-500 hover:to-amber-600 active:scale-95"
+                        className="inline-flex items-center gap-2 rounded-xl bg-[#78350F] px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-[#5C2B09] transition-all cursor-pointer active:scale-98"
                     >
-                        <UserPlus className="size-4" />
+                        <UserPlus className="size-4 text-[#FDE68A]" />
                         <span>Add Operator</span>
                     </button>
                 </div>
             </div>
 
             {/* Stat Capsules */}
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <div className="rounded-2xl border border-stone-800/80 bg-[#161412] p-4 shadow-sm">
-                    <div className="flex items-center justify-between text-stone-400">
-                        <span className="text-xs font-medium">Total Staff</span>
-                        <Users className="size-4 text-stone-500" />
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                <div className="rounded-2xl border border-[#E8E3DB] bg-white p-5 shadow-xs transition hover:shadow-md hover:border-[#D6CEC4]">
+                    <div className="flex items-center justify-between text-[#78716C]">
+                        <span className="text-[11px] font-semibold uppercase tracking-wider">Total Staff</span>
+                        <div className="flex size-8 items-center justify-center rounded-lg bg-[#F5F2EB] text-[#78716C] border border-[#E8E3DB]">
+                            <Users className="size-4" />
+                        </div>
                     </div>
-                    <p className="mt-2 text-2xl font-bold text-stone-100">{stats.total}</p>
-                    <p className="text-[11px] text-stone-500 mt-0.5">Configured terminal operators</p>
+                    <p className="mt-3 font-serif-brand text-3xl font-medium tracking-tight text-[#1C1917] tnum">{stats.total}</p>
+                    <p className="text-xs text-[#78716C] mt-1">Configured terminal operators</p>
                 </div>
 
-                <div className="rounded-2xl border border-stone-800/80 bg-[#161412] p-4 shadow-sm">
-                    <div className="flex items-center justify-between text-amber-400/90">
-                        <span className="text-xs font-medium">Managers</span>
-                        <ShieldCheck className="size-4 text-amber-400" />
+                <div className="rounded-2xl border border-[#E8E3DB] bg-white p-5 shadow-xs transition hover:shadow-md hover:border-[#D6CEC4]">
+                    <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-semibold text-[#78350F] uppercase tracking-wider">Managers</span>
+                        <div className="flex size-8 items-center justify-center rounded-lg bg-[#FEF8EC] text-[#78350F] border border-[#F2DEBA]">
+                            <ShieldCheck className="size-4" />
+                        </div>
                     </div>
-                    <p className="mt-2 text-2xl font-bold text-amber-400">{stats.managers}</p>
-                    <p className="text-[11px] text-stone-500 mt-0.5">Catalog & user admin rights</p>
+                    <p className="mt-3 font-serif-brand text-3xl font-medium tracking-tight text-[#78350F] tnum">{stats.managers}</p>
+                    <p className="text-xs text-[#78716C] mt-1">Catalog & user admin rights</p>
                 </div>
 
-                <div className="rounded-2xl border border-stone-800/80 bg-[#161412] p-4 shadow-sm">
-                    <div className="flex items-center justify-between text-sky-400/90">
-                        <span className="text-xs font-medium">Cashiers</span>
-                        <UserCheck className="size-4 text-sky-400" />
+                <div className="rounded-2xl border border-[#E8E3DB] bg-white p-5 shadow-xs transition hover:shadow-md hover:border-[#D6CEC4]">
+                    <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-semibold text-[#4E6047] uppercase tracking-wider">Cashiers</span>
+                        <div className="flex size-8 items-center justify-center rounded-lg bg-[#EDF6EE] text-[#4E6047] border border-[#CFDFCF]">
+                            <UserCheck className="size-4" />
+                        </div>
                     </div>
-                    <p className="mt-2 text-2xl font-bold text-sky-400">{stats.cashiers}</p>
-                    <p className="text-[11px] text-stone-500 mt-0.5">Register & order processing</p>
+                    <p className="mt-3 font-serif-brand text-3xl font-medium tracking-tight text-[#4E6047] tnum">{stats.cashiers}</p>
+                    <p className="text-xs text-[#78716C] mt-1">Register & order processing</p>
                 </div>
 
-                <div className="rounded-2xl border border-stone-800/80 bg-[#161412] p-4 shadow-sm">
-                    <div className="flex items-center justify-between text-rose-400/90">
-                        <span className="text-xs font-medium">Suspended</span>
-                        <UserX className="size-4 text-rose-400" />
+                <div className="rounded-2xl border border-[#E8E3DB] bg-white p-5 shadow-xs transition hover:shadow-md hover:border-[#D6CEC4]">
+                    <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-semibold text-[#78716C] uppercase tracking-wider">Suspended</span>
+                        <div className="flex size-8 items-center justify-center rounded-lg bg-rose-50 text-rose-700 border border-rose-200">
+                            <UserX className="size-4" />
+                        </div>
                     </div>
-                    <p className="mt-2 text-2xl font-bold text-rose-400">{stats.inactive}</p>
-                    <p className="text-[11px] text-stone-500 mt-0.5">Revoked access accounts</p>
+                    <p className="mt-3 font-serif-brand text-3xl font-medium tracking-tight text-[#1C1917] tnum">{stats.inactive}</p>
+                    <p className="text-xs text-[#78716C] mt-1">Revoked access accounts</p>
                 </div>
             </div>
 
             {/* Filter and Search controls */}
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-stone-800/80 bg-[#161412] p-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-[#E8E3DB] bg-white p-3 shadow-xs">
                 <div className="relative flex-1 max-w-md">
-                    <Search className="pointer-events-none absolute inset-y-0 left-3 my-auto size-4 text-stone-500" />
+                    <Search className="pointer-events-none absolute inset-y-0 left-3 my-auto size-4 text-[#A8A29E]" />
                     <input
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Search by name or email..."
-                        className="w-full rounded-xl border border-stone-800 bg-stone-900/90 py-1.5 pl-9 pr-3 text-xs text-stone-200 placeholder-stone-600 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                        className="w-full rounded-xl border border-[#E8E3DB] bg-[#FAF8F5]/60 py-2 pl-9 pr-3 text-xs text-[#1C1917] placeholder:text-[#A8A29E] focus:bg-white focus:border-[#78350F] focus:outline-none focus:ring-1 focus:ring-[#78350F]"
                     />
                 </div>
 
@@ -379,10 +387,10 @@ export function UserManagementView() {
                             key={btn.id}
                             type="button"
                             onClick={() => setFilter(btn.id)}
-                            className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
+                            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
                                 filter === btn.id
-                                    ? "bg-amber-500/20 text-amber-300 border border-amber-500/30 shadow-sm"
-                                    : "text-stone-400 hover:bg-stone-800 hover:text-stone-200"
+                                    ? "bg-[#78350F] text-white shadow-xs"
+                                    : "text-[#78716C] hover:bg-[#FAF8F5] hover:text-[#1C1917]"
                             }`}
                         >
                             {btn.label}
@@ -392,36 +400,36 @@ export function UserManagementView() {
             </div>
 
             {/* Users Table / List */}
-            <div className="overflow-hidden rounded-2xl border border-stone-800/80 bg-[#161412] shadow-xl">
+            <div className="overflow-hidden rounded-2xl border border-[#E8E3DB] bg-white shadow-xs">
                 {loading ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-stone-500 gap-2">
-                        <RefreshCw className="size-6 animate-spin text-amber-500" />
+                    <div className="flex flex-col items-center justify-center py-16 text-[#78716C] gap-2">
+                        <RefreshCw className="size-6 animate-spin text-[#78350F]" />
                         <span className="text-xs font-medium">Loading operators...</span>
                     </div>
                 ) : error ? (
                     <div className="p-8 text-center">
-                        <AlertCircle className="mx-auto size-8 text-rose-500" />
-                        <p className="mt-2 text-sm font-semibold text-rose-300">{error}</p>
+                        <AlertCircle className="mx-auto size-8 text-rose-600" />
+                        <p className="mt-2 text-sm font-semibold text-rose-700">{error}</p>
                         <button
                             type="button"
                             onClick={() => refreshUsers()}
-                            className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-stone-700 bg-stone-800 px-3 py-1.5 text-xs text-stone-200 hover:bg-stone-700"
+                            className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-[#E8E3DB] bg-white px-3 py-1.5 text-xs text-[#1C1917] hover:bg-[#FAF8F5] cursor-pointer"
                         >
                             Try Again
                         </button>
                     </div>
                 ) : filteredUsers.length === 0 ? (
-                    <div className="py-16 text-center text-stone-500">
-                        <Users className="mx-auto size-8 text-stone-600" />
-                        <p className="mt-2 text-sm font-semibold text-stone-300">No operators found</p>
-                        <p className="mt-0.5 text-xs text-stone-500">
+                    <div className="py-16 text-center text-[#78716C]">
+                        <Users className="mx-auto size-8 text-[#A8A29E]" />
+                        <p className="mt-2 font-serif-brand text-base font-medium text-[#1C1917]">No operators found</p>
+                        <p className="mt-0.5 text-xs text-[#78716C]">
                             {searchQuery ? "Try refining your search filter." : "Click 'Add Operator' to provision an account."}
                         </p>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left text-xs">
-                            <thead className="border-b border-stone-800 bg-stone-900/50 text-[11px] font-semibold text-stone-400 uppercase tracking-wider">
+                        <table className="w-full text-left text-xs min-w-[700px]">
+                            <thead className="border-b border-[#E8E3DB] bg-[#F8F5EE] text-[11px] font-semibold text-[#78716C] uppercase tracking-wider">
                                 <tr>
                                     <th className="py-3.5 pl-5 pr-3">Operator</th>
                                     <th className="px-3 py-3.5">Email</th>
@@ -431,7 +439,7 @@ export function UserManagementView() {
                                     <th className="py-3.5 pl-3 pr-5 text-right">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-stone-800/60 font-medium text-stone-300">
+                            <tbody className="divide-y divide-[#E8E3DB]/60 font-medium text-[#1C1917]">
                                 {filteredUsers.map((u) => {
                                     const isSelf = u.id === currentUser?.id
                                     const initials = u.display_name
@@ -444,66 +452,66 @@ export function UserManagementView() {
                                     return (
                                         <tr
                                             key={u.id}
-                                            className={`transition-colors hover:bg-stone-800/30 ${
-                                                !u.is_active ? "opacity-60 bg-stone-950/30" : ""
+                                            className={`transition-colors hover:bg-[#FAF8F5] ${
+                                                !u.is_active ? "opacity-60 bg-[#F5F2EB]/40" : ""
                                             }`}
                                         >
                                             <td className="py-3.5 pl-5 pr-3">
                                                 <div className="flex items-center gap-3">
                                                     <div
-                                                        className={`flex size-8 items-center justify-center rounded-xl text-xs font-bold ${
+                                                        className={`flex size-8 items-center justify-center rounded-xl text-xs font-serif-brand font-bold ${
                                                             u.role === "manager"
-                                                                ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
-                                                                : "bg-stone-800 text-stone-300 border border-stone-700"
+                                                                ? "bg-[#FEF8EC] text-[#78350F] border border-[#F2DEBA]"
+                                                                : "bg-[#EDF6EE] text-[#4E6047] border border-[#CFDFCF]"
                                                         }`}
                                                     >
                                                         {initials || "OP"}
                                                     </div>
                                                     <div>
                                                         <div className="flex items-center gap-1.5">
-                                                            <span className="font-semibold text-stone-100">
+                                                            <span className="font-semibold text-[#1C1917]">
                                                                 {u.display_name}
                                                             </span>
                                                             {isSelf && (
-                                                                <span className="rounded bg-amber-500/20 px-1 py-0.2 text-[9px] font-bold text-amber-300 uppercase">
+                                                                <span className="rounded bg-[#FEF8EC] border border-[#F2DEBA] px-1.5 py-0.2 text-[9px] font-bold text-[#78350F] uppercase">
                                                                     You
                                                                 </span>
                                                             )}
                                                         </div>
-                                                        <span className="text-[10px] text-stone-500">ID #{u.id}</span>
+                                                        <span className="text-[10px] text-[#A8A29E] tnum">ID #{u.id}</span>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-3 py-3.5 text-stone-300 font-mono text-[11px]">
+                                            <td className="px-3 py-3.5 text-[#78716C] font-mono text-[11px]">
                                                 {u.email}
                                             </td>
                                             <td className="px-3 py-3.5">
                                                 {u.role === "manager" ? (
-                                                    <span className="inline-flex items-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[11px] font-semibold text-amber-300">
-                                                        <ShieldCheck className="size-3 text-amber-400" />
+                                                    <span className="inline-flex items-center gap-1 rounded-lg border border-[#F2DEBA] bg-[#FEF8EC] px-2 py-0.5 text-[11px] font-semibold text-[#78350F]">
+                                                        <ShieldCheck className="size-3 text-[#78350F]" />
                                                         Manager
                                                     </span>
                                                 ) : (
-                                                    <span className="inline-flex items-center gap-1 rounded-lg border border-sky-500/30 bg-sky-500/10 px-2 py-0.5 text-[11px] font-semibold text-sky-300">
-                                                        <UserCheck className="size-3 text-sky-400" />
+                                                    <span className="inline-flex items-center gap-1 rounded-lg border border-[#CFDFCF] bg-[#EDF6EE] px-2 py-0.5 text-[11px] font-semibold text-[#4E6047]">
+                                                        <UserCheck className="size-3 text-[#4E6047]" />
                                                         Cashier
                                                     </span>
                                                 )}
                                             </td>
                                             <td className="px-3 py-3.5">
                                                 {u.is_active ? (
-                                                    <span className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-300">
-                                                        <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                                    <span className="inline-flex items-center gap-1.5 rounded-lg border border-[#CFDFCF] bg-[#EDF6EE] px-2 py-0.5 text-[11px] font-semibold text-[#4E6047]">
+                                                        <span className="size-1.5 rounded-full bg-[#4E6047] animate-pulse" />
                                                         Active
                                                     </span>
                                                 ) : (
-                                                    <span className="inline-flex items-center gap-1 rounded-lg border border-rose-500/30 bg-rose-500/10 px-2 py-0.5 text-[11px] font-semibold text-rose-300">
-                                                        <UserX className="size-3 text-rose-400" />
+                                                    <span className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700">
+                                                        <UserX className="size-3 text-rose-600" />
                                                         Suspended
                                                     </span>
                                                 )}
                                             </td>
-                                            <td className="px-3 py-3.5 text-[11px] text-stone-400">
+                                            <td className="px-3 py-3.5 text-[11px] text-[#78716C] tnum">
                                                 {new Date(u.created_at).toLocaleDateString(undefined, {
                                                     year: "numeric",
                                                     month: "short",
@@ -524,18 +532,18 @@ export function UserManagementView() {
                                                                 ? "Suspend operator"
                                                                 : "Activate operator"
                                                         }
-                                                        className={`rounded-lg p-1.5 transition-colors ${
+                                                        className={`rounded-lg p-1.5 transition-colors cursor-pointer ${
                                                             isSelf
-                                                                ? "cursor-not-allowed opacity-30 text-stone-600"
+                                                                ? "cursor-not-allowed opacity-30 text-[#A8A29E]"
                                                                 : u.is_active
-                                                                ? "text-stone-400 hover:bg-rose-500/15 hover:text-rose-300"
-                                                                : "text-stone-400 hover:bg-emerald-500/15 hover:text-emerald-300"
+                                                                ? "text-[#78716C] hover:bg-rose-50 hover:text-rose-700"
+                                                                : "text-[#78716C] hover:bg-[#EDF6EE] hover:text-[#4E6047]"
                                                         }`}
                                                     >
                                                         {u.is_active ? (
                                                             <UserX className="size-3.5" />
                                                         ) : (
-                                                            <CheckCircle2 className="size-3.5 text-emerald-400" />
+                                                            <CheckCircle2 className="size-3.5 text-[#4E6047]" />
                                                         )}
                                                     </button>
 
@@ -544,7 +552,7 @@ export function UserManagementView() {
                                                         type="button"
                                                         onClick={() => openEditModal(u)}
                                                         title="Edit operator"
-                                                        className="rounded-lg p-1.5 text-stone-400 transition-colors hover:bg-stone-800 hover:text-amber-300"
+                                                        className="rounded-lg p-1.5 text-[#78716C] transition-colors hover:bg-[#FAF8F5] hover:text-[#78350F] cursor-pointer"
                                                     >
                                                         <Edit3 className="size-3.5" />
                                                     </button>
@@ -559,10 +567,10 @@ export function UserManagementView() {
                                                                 ? "Cannot delete your own account"
                                                                 : "Delete operator"
                                                         }
-                                                        className={`rounded-lg p-1.5 transition-colors ${
+                                                        className={`rounded-lg p-1.5 transition-colors cursor-pointer ${
                                                             isSelf
-                                                                ? "cursor-not-allowed opacity-30 text-stone-600"
-                                                                : "text-stone-400 hover:bg-rose-500/15 hover:text-rose-300"
+                                                                ? "cursor-not-allowed opacity-30 text-[#A8A29E]"
+                                                                : "text-[#78716C] hover:bg-rose-50 hover:text-rose-700"
                                                         }`}
                                                     >
                                                         <Trash2 className="size-3.5" />
@@ -580,34 +588,34 @@ export function UserManagementView() {
 
             {/* MODAL: ADD OPERATOR */}
             {isAddModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-150">
-                    <div className="w-full max-w-md rounded-3xl border border-stone-800 bg-[#161412] p-6 shadow-2xl">
-                        <div className="flex items-center justify-between border-b border-stone-800 pb-4">
-                            <div className="flex items-center gap-2">
-                                <div className="flex size-8 items-center justify-center rounded-xl bg-amber-500/20 text-amber-400">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs animate-in fade-in duration-150">
+                    <div className="w-full max-w-md rounded-3xl border border-[#E8E3DB] bg-white p-6 shadow-2xl">
+                        <div className="flex items-center justify-between border-b border-[#E8E3DB] pb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="flex size-9 items-center justify-center rounded-xl bg-[#FEF8EC] text-[#78350F] border border-[#F2DEBA]">
                                     <UserPlus className="size-4" />
                                 </div>
-                                <h2 className="text-base font-bold text-stone-100">Add New Operator</h2>
+                                <h2 className="font-serif-brand text-base font-bold text-[#1C1917]">Add New Operator</h2>
                             </div>
                             <button
                                 type="button"
                                 onClick={() => setIsAddModalOpen(false)}
-                                className="rounded-lg p-1 text-stone-500 hover:bg-stone-800 hover:text-stone-300"
+                                className="rounded-lg p-1 text-[#78716C] hover:bg-[#F5F2EB] hover:text-[#1C1917] cursor-pointer"
                             >
                                 <X className="size-4" />
                             </button>
                         </div>
 
                         {modalError && (
-                            <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-rose-900/50 bg-rose-950/40 p-3 text-xs text-rose-300">
-                                <AlertCircle className="size-4 shrink-0 text-rose-400 mt-0.5" />
+                            <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
+                                <AlertCircle className="size-4 shrink-0 text-rose-600 mt-0.5" />
                                 <span>{modalError}</span>
                             </div>
                         )}
 
                         <form onSubmit={handleCreateUser} className="mt-4 space-y-4 text-xs">
                             <div>
-                                <label className="block font-semibold text-stone-300 mb-1">
+                                <label className="block font-semibold text-[#1C1917] mb-1">
                                     Operator Display Name *
                                 </label>
                                 <input
@@ -616,12 +624,12 @@ export function UserManagementView() {
                                     value={formData.display_name}
                                     onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
                                     placeholder="e.g. Maya Lin"
-                                    className="w-full rounded-xl border border-stone-800 bg-stone-900/80 px-3 py-2 text-stone-200 placeholder-stone-600 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                    className="w-full rounded-xl border border-[#E8E3DB] bg-[#FAF8F5]/60 px-3 py-2 text-[#1C1917] placeholder:text-[#A8A29E] focus:bg-white focus:border-[#78350F] focus:outline-none focus:ring-1 focus:ring-[#78350F]"
                                 />
                             </div>
 
                             <div>
-                                <label className="block font-semibold text-stone-300 mb-1">
+                                <label className="block font-semibold text-[#1C1917] mb-1">
                                     Email Address *
                                 </label>
                                 <input
@@ -630,29 +638,29 @@ export function UserManagementView() {
                                     value={formData.email}
                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                     placeholder="e.g. maya@example.com"
-                                    className="w-full rounded-xl border border-stone-800 bg-stone-900/80 px-3 py-2 text-stone-200 placeholder-stone-600 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                    className="w-full rounded-xl border border-[#E8E3DB] bg-[#FAF8F5]/60 px-3 py-2 text-[#1C1917] placeholder:text-[#A8A29E] focus:bg-white focus:border-[#78350F] focus:outline-none focus:ring-1 focus:ring-[#78350F]"
                                 />
                             </div>
 
                             <div>
-                                <label className="block font-semibold text-stone-300 mb-1">
+                                <label className="block font-semibold text-[#1C1917] mb-1">
                                     Operator Role *
                                 </label>
                                 <div className="grid grid-cols-2 gap-2">
                                     <button
                                         type="button"
                                         onClick={() => setFormData({ ...formData, role: "cashier" })}
-                                        className={`flex flex-col items-start rounded-xl border p-3 text-left transition-all ${
+                                        className={`flex flex-col items-start rounded-xl border p-3 text-left transition-all cursor-pointer ${
                                             formData.role === "cashier"
-                                                ? "border-sky-500/50 bg-sky-500/10 text-sky-200"
-                                                : "border-stone-800 bg-stone-900/40 text-stone-400 hover:border-stone-700"
+                                                ? "border-[#CFDFCF] bg-[#EDF6EE] text-[#4E6047]"
+                                                : "border-[#E8E3DB] bg-[#FAF8F5]/40 text-[#78716C] hover:bg-[#FAF8F5]"
                                         }`}
                                     >
                                         <div className="flex items-center gap-1.5 font-bold text-xs">
-                                            <UserCheck className="size-3.5 text-sky-400" />
+                                            <UserCheck className="size-3.5 text-[#4E6047]" />
                                             <span>Cashier</span>
                                         </div>
-                                        <span className="mt-1 text-[10px] text-stone-400 leading-tight">
+                                        <span className="mt-1 text-[10px] text-[#78716C] leading-tight">
                                             Register, Cart, Orders & Payments
                                         </span>
                                     </button>
@@ -660,17 +668,17 @@ export function UserManagementView() {
                                     <button
                                         type="button"
                                         onClick={() => setFormData({ ...formData, role: "manager" })}
-                                        className={`flex flex-col items-start rounded-xl border p-3 text-left transition-all ${
+                                        className={`flex flex-col items-start rounded-xl border p-3 text-left transition-all cursor-pointer ${
                                             formData.role === "manager"
-                                                ? "border-amber-500/50 bg-amber-500/10 text-amber-200"
-                                                : "border-stone-800 bg-stone-900/40 text-stone-400 hover:border-stone-700"
+                                                ? "border-[#F2DEBA] bg-[#FEF8EC] text-[#78350F]"
+                                                : "border-[#E8E3DB] bg-[#FAF8F5]/40 text-[#78716C] hover:bg-[#FAF8F5]"
                                         }`}
                                     >
                                         <div className="flex items-center gap-1.5 font-bold text-xs">
-                                            <ShieldCheck className="size-3.5 text-amber-400" />
+                                            <ShieldCheck className="size-3.5 text-[#78350F]" />
                                             <span>Manager</span>
                                         </div>
-                                        <span className="mt-1 text-[10px] text-stone-400 leading-tight">
+                                        <span className="mt-1 text-[10px] text-[#78716C] leading-tight">
                                             Catalog CRUD, Staff & Inventory
                                         </span>
                                     </button>
@@ -678,7 +686,7 @@ export function UserManagementView() {
                             </div>
 
                             <div>
-                                <label className="block font-semibold text-stone-300 mb-1">
+                                <label className="block font-semibold text-[#1C1917] mb-1">
                                     Initial Password * (Minimum 12 Characters)
                                 </label>
                                 <div className="relative">
@@ -689,34 +697,34 @@ export function UserManagementView() {
                                         value={formData.password}
                                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                         placeholder="••••••••••••"
-                                        className="w-full rounded-xl border border-stone-800 bg-stone-900/80 py-2 pl-3 pr-9 text-stone-200 placeholder-stone-600 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                        className="w-full rounded-xl border border-[#E8E3DB] bg-[#FAF8F5]/60 py-2 pl-3 pr-9 text-[#1C1917] placeholder:text-[#A8A29E] focus:bg-white focus:border-[#78350F] focus:outline-none focus:ring-1 focus:ring-[#78350F]"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-stone-500 hover:text-stone-300"
+                                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-[#A8A29E] hover:text-[#1C1917] cursor-pointer"
                                         tabIndex={-1}
                                     >
                                         {showPassword ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
                                     </button>
                                 </div>
-                                <p className="mt-1 text-[10px] text-stone-500">
+                                <p className="mt-1 text-[10px] text-[#78716C]">
                                     Enforces security standard: minimum 12 characters.
                                 </p>
                             </div>
 
-                            <div className="mt-6 flex items-center justify-end gap-2 border-t border-stone-800 pt-4">
+                            <div className="mt-6 flex items-center justify-end gap-2 border-t border-[#E8E3DB] pt-4">
                                 <button
                                     type="button"
                                     onClick={() => setIsAddModalOpen(false)}
-                                    className="rounded-xl border border-stone-800 bg-stone-900/60 px-4 py-2 font-semibold text-stone-400 hover:bg-stone-800 hover:text-stone-200"
+                                    className="rounded-xl border border-[#E8E3DB] bg-white px-4 py-2 font-semibold text-[#78716C] hover:bg-[#FAF8F5] hover:text-[#1C1917] cursor-pointer"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 px-5 py-2 font-semibold text-white shadow-lg shadow-amber-600/20 hover:from-amber-500 hover:to-amber-600 disabled:opacity-50"
+                                    className="flex items-center gap-1.5 rounded-xl bg-[#78350F] px-5 py-2 font-semibold text-white shadow-xs hover:bg-[#5C2B09] disabled:opacity-50 cursor-pointer active:scale-98"
                                 >
                                     {isSubmitting ? (
                                         <>
@@ -725,7 +733,7 @@ export function UserManagementView() {
                                         </>
                                     ) : (
                                         <>
-                                            <UserPlus className="size-3.5" />
+                                            <UserPlus className="size-3.5 text-[#FDE68A]" />
                                             <span>Create Operator</span>
                                         </>
                                     )}
@@ -738,37 +746,37 @@ export function UserManagementView() {
 
             {/* MODAL: EDIT OPERATOR */}
             {isEditModalOpen && userToEdit && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-150">
-                    <div className="w-full max-w-md rounded-3xl border border-stone-800 bg-[#161412] p-6 shadow-2xl">
-                        <div className="flex items-center justify-between border-b border-stone-800 pb-4">
-                            <div className="flex items-center gap-2">
-                                <div className="flex size-8 items-center justify-center rounded-xl bg-amber-500/20 text-amber-400">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs animate-in fade-in duration-150">
+                    <div className="w-full max-w-md rounded-3xl border border-[#E8E3DB] bg-white p-6 shadow-2xl">
+                        <div className="flex items-center justify-between border-b border-[#E8E3DB] pb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="flex size-9 items-center justify-center rounded-xl bg-[#FEF8EC] text-[#78350F] border border-[#F2DEBA]">
                                     <Edit3 className="size-4" />
                                 </div>
                                 <div>
-                                    <h2 className="text-base font-bold text-stone-100">Edit Operator</h2>
-                                    <p className="text-[11px] text-stone-500 font-mono">{userToEdit.email}</p>
+                                    <h2 className="font-serif-brand text-base font-bold text-[#1C1917]">Edit Operator</h2>
+                                    <p className="text-[11px] text-[#78716C] font-mono">{userToEdit.email}</p>
                                 </div>
                             </div>
                             <button
                                 type="button"
                                 onClick={() => setIsEditModalOpen(false)}
-                                className="rounded-lg p-1 text-stone-500 hover:bg-stone-800 hover:text-stone-300"
+                                className="rounded-lg p-1 text-[#78716C] hover:bg-[#F5F2EB] hover:text-[#1C1917] cursor-pointer"
                             >
                                 <X className="size-4" />
                             </button>
                         </div>
 
                         {modalError && (
-                            <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-rose-900/50 bg-rose-950/40 p-3 text-xs text-rose-300">
-                                <AlertCircle className="size-4 shrink-0 text-rose-400 mt-0.5" />
+                            <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
+                                <AlertCircle className="size-4 shrink-0 text-rose-600 mt-0.5" />
                                 <span>{modalError}</span>
                             </div>
                         )}
 
                         <form onSubmit={handleUpdateUser} className="mt-4 space-y-4 text-xs">
                             <div>
-                                <label className="block font-semibold text-stone-300 mb-1">
+                                <label className="block font-semibold text-[#1C1917] mb-1">
                                     Operator Display Name
                                 </label>
                                 <input
@@ -778,30 +786,30 @@ export function UserManagementView() {
                                     onChange={(e) =>
                                         setEditFormData({ ...editFormData, display_name: e.target.value })
                                     }
-                                    className="w-full rounded-xl border border-stone-800 bg-stone-900/80 px-3 py-2 text-stone-200 placeholder-stone-600 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                    className="w-full rounded-xl border border-[#E8E3DB] bg-[#FAF8F5]/60 px-3 py-2 text-[#1C1917] placeholder:text-[#A8A29E] focus:bg-white focus:border-[#78350F] focus:outline-none focus:ring-1 focus:ring-[#78350F]"
                                 />
                             </div>
 
                             <div>
-                                <label className="block font-semibold text-stone-300 mb-1">Role</label>
+                                <label className="block font-semibold text-[#1C1917] mb-1">Role</label>
                                 <div className="grid grid-cols-2 gap-2">
                                     <button
                                         type="button"
                                         disabled={userToEdit.id === currentUser?.id}
                                         onClick={() => setEditFormData({ ...editFormData, role: "cashier" })}
-                                        className={`flex flex-col items-start rounded-xl border p-3 text-left transition-all ${
+                                        className={`flex flex-col items-start rounded-xl border p-3 text-left transition-all cursor-pointer ${
                                             userToEdit.id === currentUser?.id
-                                                ? "opacity-40 cursor-not-allowed border-stone-800 bg-stone-900/20"
+                                                ? "opacity-40 cursor-not-allowed border-[#E8E3DB] bg-[#F5F2EB]"
                                                 : editFormData.role === "cashier"
-                                                ? "border-sky-500/50 bg-sky-500/10 text-sky-200"
-                                                : "border-stone-800 bg-stone-900/40 text-stone-400 hover:border-stone-700"
+                                                ? "border-[#CFDFCF] bg-[#EDF6EE] text-[#4E6047]"
+                                                : "border-[#E8E3DB] bg-[#FAF8F5]/40 text-[#78716C] hover:bg-[#FAF8F5]"
                                         }`}
                                     >
                                         <div className="flex items-center gap-1.5 font-bold text-xs">
-                                            <UserCheck className="size-3.5 text-sky-400" />
+                                            <UserCheck className="size-3.5 text-[#4E6047]" />
                                             <span>Cashier</span>
                                         </div>
-                                        <span className="mt-1 text-[10px] text-stone-400 leading-tight">
+                                        <span className="mt-1 text-[10px] text-[#78716C] leading-tight">
                                             Standard Register
                                         </span>
                                     </button>
@@ -810,46 +818,46 @@ export function UserManagementView() {
                                         type="button"
                                         disabled={userToEdit.id === currentUser?.id}
                                         onClick={() => setEditFormData({ ...editFormData, role: "manager" })}
-                                        className={`flex flex-col items-start rounded-xl border p-3 text-left transition-all ${
+                                        className={`flex flex-col items-start rounded-xl border p-3 text-left transition-all cursor-pointer ${
                                             userToEdit.id === currentUser?.id
-                                                ? "border-amber-500/50 bg-amber-500/10 text-amber-200 cursor-not-allowed"
+                                                ? "border-[#F2DEBA] bg-[#FEF8EC] text-[#78350F] cursor-not-allowed"
                                                 : editFormData.role === "manager"
-                                                ? "border-amber-500/50 bg-amber-500/10 text-amber-200"
-                                                : "border-stone-800 bg-stone-900/40 text-stone-400 hover:border-stone-700"
+                                                ? "border-[#F2DEBA] bg-[#FEF8EC] text-[#78350F]"
+                                                : "border-[#E8E3DB] bg-[#FAF8F5]/40 text-[#78716C] hover:bg-[#FAF8F5]"
                                         }`}
                                     >
                                         <div className="flex items-center gap-1.5 font-bold text-xs">
-                                            <ShieldCheck className="size-3.5 text-amber-400" />
+                                            <ShieldCheck className="size-3.5 text-[#78350F]" />
                                             <span>Manager</span>
                                         </div>
-                                        <span className="mt-1 text-[10px] text-stone-400 leading-tight">
+                                        <span className="mt-1 text-[10px] text-[#78716C] leading-tight">
                                             Admin Privileges
                                         </span>
                                     </button>
                                 </div>
                                 {userToEdit.id === currentUser?.id && (
-                                    <p className="mt-1 text-[10px] text-amber-400/80">
+                                    <p className="mt-1 text-[10px] text-[#78350F]">
                                         You cannot change your own role.
                                     </p>
                                 )}
                             </div>
 
                             <div>
-                                <label className="block font-semibold text-stone-300 mb-1">
+                                <label className="block font-semibold text-[#1C1917] mb-1">
                                     Account Status
                                 </label>
-                                <div className="flex items-center justify-between rounded-xl border border-stone-800 bg-stone-900/60 p-3">
+                                <div className="flex items-center justify-between rounded-xl border border-[#E8E3DB] bg-[#FAF8F5]/60 p-3">
                                     <div className="flex items-center gap-2">
                                         <div
                                             className={`size-2.5 rounded-full ${
-                                                editFormData.is_active ? "bg-emerald-400" : "bg-rose-400"
+                                                editFormData.is_active ? "bg-[#4E6047]" : "bg-rose-500"
                                             }`}
                                         />
                                         <div>
-                                            <p className="font-semibold text-stone-200">
+                                            <p className="font-semibold text-[#1C1917]">
                                                 {editFormData.is_active ? "Active Operator" : "Suspended"}
                                             </p>
-                                            <p className="text-[10px] text-stone-500">
+                                            <p className="text-[10px] text-[#78716C]">
                                                 {editFormData.is_active
                                                     ? "Able to log in and operate POS"
                                                     : "Access revoked; sessions terminated"}
@@ -865,12 +873,12 @@ export function UserManagementView() {
                                                 is_active: !editFormData.is_active,
                                             })
                                         }
-                                        className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${
+                                        className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors cursor-pointer ${
                                             userToEdit.id === currentUser?.id
-                                                ? "opacity-30 cursor-not-allowed bg-stone-800 text-stone-600"
+                                                ? "opacity-30 cursor-not-allowed bg-[#F5F2EB] text-[#A8A29E]"
                                                 : editFormData.is_active
-                                                ? "border border-rose-500/30 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20"
-                                                : "border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
+                                                ? "border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100"
+                                                : "border border-[#CFDFCF] bg-[#EDF6EE] text-[#4E6047] hover:bg-[#DFEDDF]"
                                         }`}
                                     >
                                         {editFormData.is_active ? "Suspend" : "Activate"}
@@ -879,7 +887,7 @@ export function UserManagementView() {
                             </div>
 
                             <div>
-                                <label className="block font-semibold text-stone-300 mb-1">
+                                <label className="block font-semibold text-[#1C1917] mb-1">
                                     Reset Password (Leave blank to keep unchanged)
                                 </label>
                                 <div className="relative">
@@ -890,12 +898,12 @@ export function UserManagementView() {
                                             setEditFormData({ ...editFormData, password: e.target.value })
                                         }
                                         placeholder="New password (min 12 characters)"
-                                        className="w-full rounded-xl border border-stone-800 bg-stone-900/80 py-2 pl-3 pr-9 text-stone-200 placeholder-stone-600 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                        className="w-full rounded-xl border border-[#E8E3DB] bg-[#FAF8F5]/60 py-2 pl-3 pr-9 text-[#1C1917] placeholder:text-[#A8A29E] focus:bg-white focus:border-[#78350F] focus:outline-none focus:ring-1 focus:ring-[#78350F]"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-stone-500 hover:text-stone-300"
+                                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-[#A8A29E] hover:text-[#1C1917] cursor-pointer"
                                         tabIndex={-1}
                                     >
                                         {showPassword ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
@@ -903,18 +911,18 @@ export function UserManagementView() {
                                 </div>
                             </div>
 
-                            <div className="mt-6 flex items-center justify-end gap-2 border-t border-stone-800 pt-4">
+                            <div className="mt-6 flex items-center justify-end gap-2 border-t border-[#E8E3DB] pt-4">
                                 <button
                                     type="button"
                                     onClick={() => setIsEditModalOpen(false)}
-                                    className="rounded-xl border border-stone-800 bg-stone-900/60 px-4 py-2 font-semibold text-stone-400 hover:bg-stone-800 hover:text-stone-200"
+                                    className="rounded-xl border border-[#E8E3DB] bg-white px-4 py-2 font-semibold text-[#78716C] hover:bg-[#FAF8F5] hover:text-[#1C1917] cursor-pointer"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 px-5 py-2 font-semibold text-white shadow-lg shadow-amber-600/20 hover:from-amber-500 hover:to-amber-600 disabled:opacity-50"
+                                    className="flex items-center gap-1.5 rounded-xl bg-[#78350F] px-5 py-2 font-semibold text-white shadow-xs hover:bg-[#5C2B09] disabled:opacity-50 cursor-pointer active:scale-98"
                                 >
                                     {isSubmitting ? (
                                         <>
@@ -933,36 +941,36 @@ export function UserManagementView() {
 
             {/* MODAL: DELETE CONFIRMATION */}
             {userToDelete && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-150">
-                    <div className="w-full max-w-sm rounded-3xl border border-rose-900/50 bg-[#161412] p-6 shadow-2xl">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs animate-in fade-in duration-150">
+                    <div className="w-full max-w-sm rounded-3xl border border-[#E8E3DB] bg-white p-6 shadow-2xl">
                         <div className="flex items-center gap-3">
-                            <div className="flex size-10 items-center justify-center rounded-2xl bg-rose-500/15 text-rose-400 border border-rose-500/30">
+                            <div className="flex size-10 items-center justify-center rounded-2xl bg-rose-50 text-rose-700 border border-rose-200">
                                 <Trash2 className="size-5" />
                             </div>
                             <div>
-                                <h3 className="text-sm font-bold text-stone-100">Delete Operator Account?</h3>
-                                <p className="text-xs text-stone-400">This action cannot be undone.</p>
+                                <h3 className="font-serif-brand text-sm font-bold text-[#1C1917]">Delete Operator Account?</h3>
+                                <p className="text-xs text-[#78716C]">This action cannot be undone.</p>
                             </div>
                         </div>
 
-                        <p className="mt-4 text-xs text-stone-300 leading-relaxed">
+                        <p className="mt-4 text-xs text-[#78716C] leading-relaxed">
                             Are you sure you want to permanently delete{" "}
-                            <strong className="text-white">{userToDelete.display_name}</strong> (
-                            <span className="font-mono text-stone-400">{userToDelete.email}</span>)? Active sessions will be terminated immediately.
+                            <strong className="text-[#1C1917]">{userToDelete.display_name}</strong> (
+                            <span className="font-mono text-[#78716C]">{userToDelete.email}</span>)? Active sessions will be terminated immediately.
                         </p>
 
-                        <div className="mt-6 flex items-center justify-end gap-2 border-t border-stone-800/80 pt-4">
+                        <div className="mt-6 flex items-center justify-end gap-2 border-t border-[#E8E3DB] pt-4">
                             <button
                                 type="button"
                                 onClick={() => setUserToDelete(null)}
-                                className="rounded-xl border border-stone-800 bg-stone-900/60 px-4 py-2 text-xs font-semibold text-stone-400 hover:bg-stone-800 hover:text-stone-200"
+                                className="rounded-xl border border-[#E8E3DB] bg-white px-4 py-2 text-xs font-semibold text-[#78716C] hover:bg-[#FAF8F5] hover:text-[#1C1917] cursor-pointer"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="button"
                                 onClick={handleDeleteUser}
-                                className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-semibold text-white shadow-md shadow-rose-600/30 hover:bg-rose-500"
+                                className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-rose-700 cursor-pointer active:scale-98"
                             >
                                 Confirm Delete
                             </button>

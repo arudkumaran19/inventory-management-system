@@ -1,5 +1,4 @@
-import { PackagePlus, Plus } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Coffee, Plus } from "lucide-react"
 
 type ProductCardProps = {
     id: number
@@ -29,50 +28,47 @@ export function ProductCard({
                 }
             }}
             className={[
-                "group relative flex flex-col rounded-2xl border bg-white p-3.5 shadow-xs transition-all duration-200 select-none",
+                "group relative flex flex-col rounded-2xl border bg-white p-3 shadow-2xs transition-all duration-150 select-none",
                 isOutOfStock
-                    ? "border-stone-200/70 opacity-75"
-                    : "cursor-pointer border-stone-200/90 hover:-translate-y-1 hover:border-amber-500/40 hover:shadow-xl hover:shadow-stone-200/60",
+                    ? "border-[#E8E3DB] opacity-65 cursor-not-allowed"
+                    : "cursor-pointer border-[#E8E3DB] hover:-translate-y-0.5 hover:border-[#78350F]/40 hover:shadow-md hover:shadow-[#78350F]/5 active:scale-[0.98]",
             ].join(" ")}
         >
             {/* Image Showcase Container */}
-            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-gradient-to-br from-stone-100 via-stone-50 to-stone-200/60">
+            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-[#F5F1EA]">
                 {image ? (
                     <img
                         src={image}
                         alt={name}
                         loading="lazy"
-                        className="size-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                        className="size-full object-cover transition-transform duration-300 ease-out group-hover:scale-105"
                     />
                 ) : (
-                    <div className="flex size-full items-center justify-center text-stone-300">
-                        <PackagePlus className="size-10 transition-transform duration-300 group-hover:scale-110 group-hover:text-amber-600/50" />
+                    <div className="flex size-full items-center justify-center text-[#A8A29E]">
+                        <Coffee className="size-8 transition-transform duration-200 group-hover:scale-110 group-hover:text-[#78350F]" />
                     </div>
                 )}
-
-                {/* Subtle dark vignette overlay at the bottom of image */}
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
                 {/* Floating Stock Status Badge */}
                 <div className="absolute right-2 top-2 z-10">
                     <span
                         className={[
-                            "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold shadow-xs backdrop-blur-md transition-all",
+                            "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold shadow-xs backdrop-blur-md transition-all",
                             isOutOfStock
-                                ? "bg-stone-900/85 text-white"
+                                ? "bg-white/95 text-[#78716C] border border-[#E8E3DB]"
                                 : isLowStock
-                                    ? "bg-white/95 text-amber-800 ring-1 ring-amber-500/30"
-                                    : "bg-white/95 text-emerald-800 ring-1 ring-emerald-500/30",
+                                    ? "bg-[#FEF8EC]/95 text-[#8C4E08] border border-[#F7E0B5]"
+                                    : "bg-[#EDF6EE]/95 text-[#215A36] border border-[#C8E3CE]",
                         ].join(" ")}
                     >
                         <span
                             className={[
                                 "size-1.5 rounded-full shrink-0",
                                 isOutOfStock
-                                    ? "bg-rose-400"
+                                    ? "bg-[#78716C]"
                                     : isLowStock
-                                        ? "bg-amber-500 animate-pulse"
-                                        : "bg-emerald-500",
+                                        ? "bg-[#B45309] animate-pulse"
+                                        : "bg-[#4E6047]",
                             ].join(" ")}
                         />
                         {isOutOfStock
@@ -85,46 +81,38 @@ export function ProductCard({
             </div>
 
             {/* Product Meta & Price */}
-            <div className="mt-3.5 flex flex-1 flex-col justify-between">
+            <div className="mt-3 flex flex-1 flex-col justify-between">
                 <div>
-                    <h3 className="line-clamp-1 text-[14.5px] font-bold tracking-tight text-stone-900 transition-colors group-hover:text-amber-900">
+                    <h3 className="line-clamp-1 text-sm font-bold tracking-tight text-[#1C1917] transition-colors group-hover:text-[#78350F]">
                         {name}
                     </h3>
-
-                    <div className="mt-1 flex items-baseline justify-between">
-                        <p className="tnum text-lg font-extrabold tracking-tight text-stone-900 sm:text-xl">
-                            ${price.toFixed(2)}
-                        </p>
-                        <span className="text-[11px] font-medium text-stone-400">
-                            per serving
-                        </span>
-                    </div>
                 </div>
 
-                {/* Quick Add Action */}
-                <Button
-                    type="button"
-                    disabled={isOutOfStock}
-                    onClick={(e) => {
-                        e.stopPropagation()
-                        onAddToCart?.(id)
-                    }}
-                    className={[
-                        "mt-3.5 h-9 w-full rounded-xl text-xs font-bold transition-all duration-150 active:scale-[0.98]",
-                        isOutOfStock
-                            ? "border border-stone-200 bg-stone-100 text-stone-400 cursor-not-allowed"
-                            : "bg-stone-900 text-white shadow-sm hover:bg-amber-700 hover:shadow-md hover:shadow-amber-700/25",
-                    ].join(" ")}
-                >
-                    {isOutOfStock ? (
-                        "Unavailable"
-                    ) : (
-                        <span className="flex items-center justify-center gap-1.5">
-                            <Plus className="size-3.5 stroke-[2.5]" />
-                            Add to Order
-                        </span>
-                    )}
-                </Button>
+                <div className="mt-2.5 flex items-center justify-between border-t border-[#E8E3DB]/70 pt-2">
+                    <p className="tnum text-base font-extrabold tracking-tight text-[#1C1917]">
+                        ${price.toFixed(2)}
+                    </p>
+
+                    <button
+                        type="button"
+                        disabled={isOutOfStock}
+                        aria-label={`Add ${name} to register ticket`}
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            if (!isOutOfStock) {
+                                onAddToCart?.(id)
+                            }
+                        }}
+                        className={[
+                            "flex size-7.5 items-center justify-center rounded-lg font-bold transition-all active:scale-90",
+                            isOutOfStock
+                                ? "bg-[#F5F1EA] text-[#A8A29E] cursor-not-allowed"
+                                : "bg-[#FAF8F5] text-[#78350F] border border-[#E8E3DB] hover:bg-[#78350F] hover:text-white hover:border-[#78350F]",
+                        ].join(" ")}
+                    >
+                        <Plus className="size-4 stroke-[2.5]" />
+                    </button>
+                </div>
             </div>
         </article>
     )

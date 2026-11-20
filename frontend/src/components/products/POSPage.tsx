@@ -6,6 +6,7 @@ import {
     CreditCard,
     Loader2,
     PackageSearch,
+    ShieldCheck,
     ShoppingCart,
     Undo2,
     XCircle,
@@ -30,6 +31,7 @@ import {
 import { ProductGrid, type Product } from "./ProductGrid"
 import {
     ProductToolbar,
+    type CategoryFilter,
     type StockFilter,
 } from "./ProductToolbar"
 import {
@@ -119,12 +121,11 @@ function persistPOSState(
 
 export function POSPage() {
     const [search, setSearch] = useState("")
-    const [stockFilter, setStockFilter] =
-        useState<StockFilter>("all")
+    const [stockFilter, setStockFilter] = useState<StockFilter>("all")
+    const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all")
     const [products, setProducts] = useState<Product[]>([])
 
-    // Restore cart and checkout/payment state from sessionStorage so navigating to
-    // Orders/Inventory and back does not lose active cart or pending payment box.
+    // Restore cart and checkout/payment state from sessionStorage
     const persisted = useMemo(() => loadPersistedPOSState(), [])
     const [cartItems, setCartItems] = useState<CartItem[]>(persisted.cartItems)
     const [cartId, setCartId] = useState<number | null>(persisted.cartId)
@@ -143,6 +144,9 @@ export function POSPage() {
     // Stacked, non-overlapping toast notification system
     const [toasts, setToasts] = useState<ToastItemData[]>([])
 
+    // Countdown remaining seconds for 5-minute reservation
+    const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null)
+
     const addToast = useCallback(
         (message: string, variant: ToastVariant = "success", duration = 5000) => {
             const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
@@ -157,6 +161,27 @@ export function POSPage() {
 
     // Stable idempotency key — preserved across navigations and retries.
     const idempotencyKeyRef = useRef<string | null>(persisted.idempotencyKey)
+
+    // Live countdown timer for active reservation
+    useEffect(() => {
+        if (!checkoutResponse || checkoutResponse.order.status !== "Reserved" || !checkoutResponse.reservation_expires_at) {
+            return
+        }
+
+        const updateCountdown = () => {
+            const expiryMs = new Date(checkoutResponse.reservation_expires_at).getTime()
+            const diff = Math.max(0, Math.floor((expiryMs - Date.now()) / 1000))
+            setRemainingSeconds(diff)
+        }
+
+        updateCountdown()
+        const timerId = setInterval(updateCountdown, 1000)
+
+        return () => {
+            clearInterval(timerId)
+            setRemainingSeconds(null)
+        }
+    }, [checkoutResponse])
 
     // Persist full POS state to sessionStorage whenever it changes.
     useEffect(() => {
@@ -257,7 +282,7 @@ export function POSPage() {
                         current ? { ...current, order: freshOrder } : null,
                     )
 
-                    // If status changed to Expired/Cancelled/Paid, refresh products to reflect restock!
+                    // If status changed to Expired/Cancelled/Paid, refresh products to reflect restock
                     const refreshed = await getProducts()
                     if (!cancelled) {
                         setProducts(
@@ -303,13 +328,11 @@ export function POSPage() {
                 }
             }
 
-            // Either no cartId or the stored cartId is not Active.
-            // Create a fresh active cart so checkout and item operations work.
+            // Create a fresh active cart so checkout and item operations work
             try {
                 const freshCart = await createCart()
                 if (!cancelled) {
                     setCartId(freshCart.id)
-                    // If cart was inactive, clear stale items
                     if (!checkoutResponse || checkoutResponse.order.status !== "Reserved") {
                         setCartItems([])
                     }
@@ -349,9 +372,39 @@ export function POSPage() {
                             ? product.stock > 0 && product.stock <= 5
                             : product.stock === 0
 
-            return matchesSearch && matchesStock
+            let matchesCategory = true
+            if (categoryFilter !== "all") {
+                const name = product.name.toLowerCase()
+                if (categoryFilter === "coffee") {
+                    matchesCategory =
+                        (name.includes("espresso") ||
+                            name.includes("cappuccino") ||
+                            name.includes("latte") ||
+                            name.includes("coffee") ||
+                            name.includes("americano")) &&
+                        !name.includes("iced") &&
+                        !name.includes("cold") &&
+                        !name.includes("beans")
+                } else if (categoryFilter === "cold") {
+                    matchesCategory = name.includes("cold") || name.includes("iced")
+                } else if (categoryFilter === "tea") {
+                    matchesCategory = name.includes("matcha") || name.includes("tea") || name.includes("chai")
+                } else if (categoryFilter === "bakery") {
+                    matchesCategory =
+                        name.includes("croissant") ||
+                        name.includes("muffin") ||
+                        name.includes("cookie") ||
+                        name.includes("pastry") ||
+                        name.includes("cake") ||
+                        name.includes("bread")
+                } else if (categoryFilter === "retail") {
+                    matchesCategory = name.includes("beans") || name.includes("bottle") || name.includes("bag")
+                }
+            }
+
+            return matchesSearch && matchesStock && matchesCategory
         })
-    }, [products, search, stockFilter])
+    }, [products, search, stockFilter, categoryFilter])
 
     const addToCart = async (productId: number) => {
         const product = products.find((item) => item.id === productId)
@@ -365,7 +418,7 @@ export function POSPage() {
             checkoutResponse.order.status === "Reserved"
         ) {
             addToast(
-                `Order #${checkoutResponse.order.id} is awaiting payment. Please complete or cancel it before starting a new cart.`,
+                `Order #${checkoutResponse.order.id} is awaiting payment. Settle or cancel it before starting a new ticket.`,
                 "info",
                 5000,
             )
@@ -435,11 +488,7 @@ export function POSPage() {
             (cartItem) => cartItem.id === productId,
         )
 
-        if (!item) {
-            return
-        }
-
-        if (cartId === null) {
+        if (!item || cartId === null) {
             return
         }
 
@@ -549,12 +598,10 @@ export function POSPage() {
     }
 
     const handleCheckout = async () => {
-        // Double-click guard: prevent concurrent checkout submissions.
         if (cartId === null || cartItems.length === 0 || isCheckingOut) {
             return
         }
 
-        // If order is already reserved, do not allow duplicate checkout
         if (
             checkoutResponse &&
             checkoutResponse.order.status === "Reserved"
@@ -567,11 +614,9 @@ export function POSPage() {
             idempotencyKeyRef.current = null
 
             const response = await checkoutCart(cartId)
-
             setCheckoutResponse(response)
 
-            // Generate a stable idempotency key tied to this order.
-            // All payment retries for the same checkout will reuse this key.
+            // Generate stable idempotency key tied to order
             const newKey = `pos-${response.order.id}-payment`
             idempotencyKeyRef.current = newKey
 
@@ -581,12 +626,12 @@ export function POSPage() {
                 second: "2-digit",
             })
             addToast(
-                `Order #${response.order.id} created. Stock is reserved until ${expiryTime}.`,
+                `Order #${response.order.id} reserved. Stock held until ${expiryTime}.`,
                 "success",
                 5000,
             )
 
-            // Refresh products so available stock visibly decreases on the POS product cards immediately
+            // Refresh products so available stock visibly decreases on product cards
             const refreshedProducts = await getProducts()
             setProducts(
                 refreshedProducts
@@ -601,14 +646,13 @@ export function POSPage() {
                     : "Checkout failed."
 
             if (message.includes("Cart is not active")) {
-                // Self-heal: the cart was already checked out or inactive.
                 try {
                     const freshCart = await createCart()
                     setCartId(freshCart.id)
                     setCartItems([])
                     setCheckoutResponse(null)
                     addToast(
-                        "The previous cart was already completed. A new cart has been initialized.",
+                        "The previous ticket was finalized. A new register ticket has been opened.",
                         "error",
                         6000,
                     )
@@ -620,7 +664,6 @@ export function POSPage() {
 
             addToast(`Checkout failed: ${message}`, "error", 6000)
             setCheckoutResponse(null)
-
             console.error(requestError)
         } finally {
             setIsCheckingOut(false)
@@ -637,12 +680,12 @@ export function POSPage() {
             await cancelOrder(checkoutResponse.order.id)
 
             addToast(
-                `Order #${checkoutResponse.order.id} reservation cancelled. Stock has been restored.`,
+                `Order #${checkoutResponse.order.id} reservation released. Inventory restored.`,
                 "info",
                 5000,
             )
 
-            // Refresh inventory so product cards show restored stock.
+            // Refresh inventory so product cards show restored stock
             const refreshedProducts = await getProducts()
             setProducts(
                 refreshedProducts
@@ -686,8 +729,6 @@ export function POSPage() {
             return
         }
 
-        // Use the stable key generated at checkout time (or create a fallback
-        // if somehow it was not set — this should not occur in practice).
         const idempotencyKey =
             idempotencyKeyRef.current ??
             `pos-${checkoutResponse.order.id}-payment`
@@ -724,36 +765,34 @@ export function POSPage() {
 
             if (outcome === "success") {
                 addToast(
-                    `Payment successful. Order #${response.order_id} is now Paid.`,
+                    `Payment approved. Order #${response.order_id} is settled.`,
                     "success",
                     5000,
                 )
             } else if (outcome === "failure") {
                 addToast(
-                    `Payment declined. Order #${response.order_id} is now Failed. Stock has been restored.`,
+                    `Card declined. Order #${response.order_id} cancelled and stock returned.`,
                     "error",
                     6000,
                 )
             } else {
                 addToast(
-                    `Payment simulated timeout. Order #${response.order_id} is now Expired. Stock has been restored.`,
+                    `Payment timed out. Order #${response.order_id} expired and stock released.`,
                     "error",
                     6000,
                 )
             }
 
-            // Refresh inventory so product cards show current stock.
+            // Refresh inventory so product cards show current stock
             const refreshedProducts = await getProducts()
-
             setProducts(
                 refreshedProducts
                     .filter((product) => product.is_active)
                     .map(mapProduct),
             )
 
-            // Start a fresh cart for the next order.
+            // Start a fresh cart for next order
             const newCart = await createCart()
-
             setCartId(newCart.id)
             setCartItems([])
             idempotencyKeyRef.current = null
@@ -764,7 +803,6 @@ export function POSPage() {
                     : "Payment failed."
 
             addToast(`Payment failed: ${message}`, "error", 6000)
-
             console.error(requestError)
         } finally {
             setPaymentLoading(false)
@@ -776,187 +814,200 @@ export function POSPage() {
         0,
     )
 
+    // Format remaining countdown time (e.g., 04:35)
+    const formatCountdown = (seconds: number) => {
+        const mins = Math.floor(seconds / 60)
+        const secs = seconds % 60
+        return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`
+    }
 
     return (
-        <div className="flex h-[calc(100vh-4rem)] min-h-0 bg-[#f8fafc]">
+        <div className="flex h-[calc(100vh-4rem)] min-h-0 bg-[#FAF8F5]">
             <section className="min-w-0 flex-1 overflow-y-auto p-4 sm:p-6">
                 <div className="mx-auto max-w-7xl">
-                    <div className="mb-6 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                    {/* Catalog Header */}
+                    <div className="mb-5 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                            <div className="flex items-center gap-2">
-                                <PackageSearch className="size-5 text-stone-800" />
-                                <h2 className="text-lg font-bold tracking-tight text-stone-900 sm:text-xl">
-                                    Coffee & Beverage Catalog
+                            <div className="flex items-center gap-2.5">
+                                <PackageSearch className="size-5 text-[#78350F]" />
+                                <h2 className="font-serif-brand text-xl font-bold tracking-tight text-[#1C1917] sm:text-2xl">
+                                    Artisan Menu &amp; Catalog
                                 </h2>
                             </div>
 
-                            <p className="mt-0.5 text-xs text-stone-500 font-medium">
-                                Fast touch POS — tap any card to stage items in the register order.
+                            <p className="mt-0.5 text-xs text-[#78716C] font-medium">
+                                Specialty roasts, cold brews, and fresh bakery items. Tap to stage on ticket.
                             </p>
+                        </div>
+
+                        <div className="flex items-center gap-2 mt-2 sm:mt-0">
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-white border border-[#E8E3DB] px-3 py-1 text-xs font-semibold text-[#57534E]">
+                                <ShieldCheck className="size-3.5 text-[#4E6047]" />
+                                Concurrency Protection Active
+                            </span>
                         </div>
                     </div>
 
+                    {/* Toolbar with Categories and Filters */}
                     <ProductToolbar
                         search={search}
                         onSearchChange={setSearch}
                         stockFilter={stockFilter}
                         onStockFilterChange={setStockFilter}
+                        categoryFilter={categoryFilter}
+                        onCategoryFilterChange={setCategoryFilter}
                     />
 
-                    {/* Executive Payment Simulation Terminal */}
+                    {/* Register Settlement Terminal (When Order is Active/Settling) */}
                     {checkoutResponse && (
                         <div
                             className={[
-                                "mt-5 rounded-2xl border p-5 shadow-xs transition-all duration-200",
+                                "mt-5 rounded-2xl border p-4.5 shadow-sm transition-all duration-200",
                                 checkoutResponse.order.status === "Reserved"
-                                    ? "border-amber-300/90 bg-gradient-to-br from-amber-50/70 via-white to-amber-50/40 ring-1 ring-amber-400/40 shadow-md shadow-amber-500/10"
+                                    ? "border-[#F7E0B5] bg-[#FEF8EC]"
                                     : checkoutResponse.order.status === "Paid"
-                                        ? "border-emerald-300 bg-gradient-to-br from-emerald-50/70 via-white to-emerald-50/30 ring-1 ring-emerald-400/30 shadow-md shadow-emerald-500/10"
-                                        : "border-rose-300 bg-rose-50/40 ring-1 ring-rose-400/30",
+                                        ? "border-[#C8E3CE] bg-[#EDF6EE]"
+                                        : "border-[#F8C8C8] bg-[#FDF2F2]",
                             ].join(" ")}
                         >
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-stone-200/80">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E8E3DB]/80">
                                 <div>
-                                    <div className="flex items-center gap-2">
-                                        <CreditCard className="size-4.5 text-stone-800" />
-                                        <p className="text-sm font-extrabold text-stone-950">
-                                            Order #{checkoutResponse.order.id} Payment Terminal
+                                    <div className="flex items-center gap-2.5">
+                                        <CreditCard className="size-4.5 text-[#78350F]" />
+                                        <p className="font-serif-brand text-base font-bold text-[#1C1917]">
+                                            Order #{checkoutResponse.order.id} Settlement
                                         </p>
                                     </div>
 
-                                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-stone-500">
-                                        <span>Status: <strong className="font-semibold text-stone-900">{checkoutResponse.order.status}</strong></span>
-                                        {checkoutResponse.order.status === "Reserved" &&
-                                            checkoutResponse.reservation_expires_at && (
-                                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-100/90 px-2.5 py-0.5 text-[11px] font-bold text-amber-900 ring-1 ring-amber-400/40">
-                                                    <Clock className="size-3 text-amber-700" />
-                                                    Reserved until{" "}
-                                                    <span className="tnum font-bold">
-                                                        {new Date(
-                                                            checkoutResponse.reservation_expires_at,
-                                                        ).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                                                    </span>
-                                                </span>
-                                            )}
+                                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[#78716C]">
+                                        <span>Status: <strong className="font-semibold text-[#1C1917]">{checkoutResponse.order.status}</strong></span>
+                                        {checkoutResponse.order.status === "Reserved" && remainingSeconds !== null && (
+                                            <span className="inline-flex items-center gap-1.5 rounded-full bg-white border border-[#F7E0B5] px-2.5 py-0.5 text-xs font-bold text-[#8C4E08]">
+                                                <Clock className="size-3 text-[#B45309]" />
+                                                Stock Hold: <span className="tnum font-extrabold">{formatCountdown(remainingSeconds)}</span>
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
 
                                 <span
-                                    className={`self-start sm:self-center inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${
+                                    className={`self-start sm:self-center inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold border ${
                                         checkoutResponse.order.status === "Paid"
-                                            ? "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-400/40"
+                                            ? "bg-white text-[#215A36] border-[#C8E3CE]"
                                             : checkoutResponse.order.status === "Reserved"
-                                                ? "bg-amber-100 text-amber-900 ring-1 ring-amber-400/40"
-                                                : "bg-rose-100 text-rose-800 ring-1 ring-rose-400/40"
+                                                ? "bg-white text-[#8C4E08] border-[#F7E0B5]"
+                                                : "bg-white text-[#9B2C2C] border-[#F8C8C8]"
                                     }`}
                                 >
                                     <span
                                         className={`size-1.5 rounded-full ${
                                             checkoutResponse.order.status === "Paid"
-                                                ? "bg-emerald-600"
+                                                ? "bg-[#4E6047]"
                                                 : checkoutResponse.order.status === "Reserved"
-                                                    ? "bg-amber-600 animate-pulse"
-                                                    : "bg-rose-600"
+                                                    ? "bg-[#B45309] animate-pulse"
+                                                    : "bg-[#9B2C2C]"
                                         }`}
                                     />
                                     {checkoutResponse.order.status}
                                 </span>
                             </div>
 
-                            <div className="pt-3.5">
-                                <div className="flex items-center justify-between">
-                                    <p className="text-[11px] font-bold uppercase tracking-wider text-stone-400">
-                                        Simulate Gateway Transaction
-                                    </p>
-                                    <span className="text-[11px] font-medium text-stone-400">
-                                        Idempotent POS Gateway Active
-                                    </span>
-                                </div>
-
+                            <div className="pt-3">
                                 {checkoutResponse.order.status === "Reserved" ? (
-                                    <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                                        <button
-                                            type="button"
-                                            disabled={paymentLoading}
-                                            onClick={() => void handlePayment("success")}
-                                            className="inline-flex h-9.5 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3 text-xs font-bold text-white shadow-sm shadow-emerald-600/20 hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 transition-all"
-                                        >
-                                            <CheckCircle2 className="size-3.5" />
-                                            Pay (Success)
-                                        </button>
+                                    <>
+                                        <div className="flex items-center justify-between text-xs text-[#78716C]">
+                                            <p className="font-medium">
+                                                Simulate POS payment outcome for customer card/cash:
+                                            </p>
+                                            <span className="text-[11px] font-semibold text-[#78350F]">
+                                                Idempotency Key Active
+                                            </span>
+                                        </div>
 
-                                        <button
-                                            type="button"
-                                            disabled={paymentLoading}
-                                            onClick={() => void handlePayment("failure")}
-                                            className="inline-flex h-9.5 items-center justify-center gap-1.5 rounded-xl bg-rose-600 px-3 text-xs font-bold text-white shadow-sm shadow-rose-600/20 hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 transition-all"
-                                        >
-                                            <XCircle className="size-3.5" />
-                                            Decline Payment
-                                        </button>
+                                        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                                            <button
+                                                type="button"
+                                                disabled={paymentLoading}
+                                                onClick={() => void handlePayment("success")}
+                                                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#215A36] px-3.5 text-xs font-bold text-white shadow-xs hover:bg-[#184428] disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 transition-all"
+                                            >
+                                                <CheckCircle2 className="size-4" />
+                                                Approve Payment
+                                            </button>
 
-                                        <button
-                                            type="button"
-                                            disabled={paymentLoading}
-                                            onClick={() => void handlePayment("timeout")}
-                                            className="inline-flex h-9.5 items-center justify-center gap-1.5 rounded-xl bg-stone-800 px-3 text-xs font-bold text-white shadow-sm hover:bg-stone-900 disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 transition-all"
-                                        >
-                                            <Clock className="size-3.5" />
-                                            Simulate Timeout
-                                        </button>
+                                            <button
+                                                type="button"
+                                                disabled={paymentLoading}
+                                                onClick={() => void handlePayment("failure")}
+                                                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#9B2C2C] px-3.5 text-xs font-bold text-white shadow-xs hover:bg-[#7D2323] disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 transition-all"
+                                            >
+                                                <XCircle className="size-4" />
+                                                Decline Card
+                                            </button>
 
-                                        <button
-                                            type="button"
-                                            disabled={paymentLoading}
-                                            onClick={() => void handleCancelReservation()}
-                                            className="inline-flex h-9.5 items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-white px-3 text-xs font-bold text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 transition-all"
-                                        >
-                                            <Undo2 className="size-3.5" />
-                                            Cancel Reservation
-                                        </button>
-                                    </div>
+                                            <button
+                                                type="button"
+                                                disabled={paymentLoading}
+                                                onClick={() => void handlePayment("timeout")}
+                                                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#1C1917] px-3.5 text-xs font-bold text-white shadow-xs hover:bg-[#292524] disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 transition-all"
+                                            >
+                                                <Clock className="size-4" />
+                                                Simulate Timeout
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                disabled={paymentLoading}
+                                                onClick={() => void handleCancelReservation()}
+                                                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-[#D8D1C5] bg-white px-3.5 text-xs font-bold text-[#78350F] hover:bg-[#FAF8F5] disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 transition-all"
+                                            >
+                                                <Undo2 className="size-4" />
+                                                Release Hold
+                                            </button>
+                                        </div>
+                                    </>
                                 ) : (
-                                    <div className="mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl bg-stone-100/80 p-3">
-                                        <p className="text-xs font-medium text-stone-700">
-                                            Order #{checkoutResponse.order.id} is {checkoutResponse.order.status.toLowerCase()}. You can begin a fresh register order.
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-[#E8E3DB] rounded-xl p-3">
+                                        <p className="text-xs font-medium text-[#1C1917]">
+                                            Order #{checkoutResponse.order.id} status is <strong>{checkoutResponse.order.status}</strong>. Customer transaction complete.
                                         </p>
                                         <button
                                             type="button"
                                             onClick={() => void handleStartNewOrder()}
-                                            className="inline-flex h-8.5 items-center justify-center gap-1.5 rounded-xl bg-stone-900 px-3.5 text-xs font-bold text-white hover:bg-amber-700 active:scale-95 transition-all shadow-xs"
+                                            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl bg-[#78350F] px-4 text-xs font-bold text-white hover:bg-[#5A270B] active:scale-95 transition-all shadow-xs"
                                         >
-                                            Start New Order
+                                            Start Next Order
                                             <ArrowRight className="size-3.5" />
                                         </button>
                                     </div>
                                 )}
 
                                 {paymentLoading && (
-                                    <div className="mt-3 flex items-center gap-2 text-xs font-semibold text-amber-800">
+                                    <div className="mt-3 flex items-center gap-2 text-xs font-semibold text-[#78350F]">
                                         <Loader2 className="size-3.5 animate-spin" />
-                                        Processing payment through simulated gateway...
+                                        Processing transaction through secure POS gateway...
                                     </div>
                                 )}
                             </div>
                         </div>
                     )}
 
+                    {/* Products Grid */}
                     <div className="mt-5">
                         {loading ? (
-                            <div className="flex min-h-80 items-center justify-center rounded-2xl border border-zinc-200 bg-white">
-                                <div className="flex items-center gap-2 text-sm text-zinc-500">
-                                    <Loader2 className="size-4 animate-spin" />
-                                    Loading products...
+                            <div className="flex min-h-80 items-center justify-center rounded-2xl border border-[#E8E3DB] bg-white">
+                                <div className="flex items-center gap-2 text-sm text-[#78716C]">
+                                    <Loader2 className="size-4 animate-spin text-[#78350F]" />
+                                    Loading café catalog...
                                 </div>
                             </div>
                         ) : error ? (
-                            <div className="flex min-h-80 items-center justify-center rounded-2xl border border-red-200 bg-red-50">
+                            <div className="flex min-h-80 items-center justify-center rounded-2xl border border-[#F8C8C8] bg-[#FDF2F2]">
                                 <div className="text-center">
-                                    <p className="text-sm font-semibold text-red-900">
-                                        Unable to load products
+                                    <p className="font-serif-brand text-sm font-semibold text-[#9B2C2C]">
+                                        Unable to Load Menu
                                     </p>
-
-                                    <p className="mt-1 text-sm text-red-700">
+                                    <p className="mt-1 text-xs text-[#9B2C2C]/80">
                                         {error}
                                     </p>
                                 </div>
@@ -972,7 +1023,7 @@ export function POSPage() {
             </section>
 
             {/* Desktop cart */}
-            <aside className="hidden w-[380px] shrink-0 xl:block shadow-sm">
+            <aside className="hidden w-[380px] shrink-0 xl:block shadow-xs">
                 <CartPanel
                     items={cartItems}
                     onIncrease={increaseQuantity}
@@ -993,11 +1044,11 @@ export function POSPage() {
                 <button
                     type="button"
                     onClick={() => setMobileCartOpen(true)}
-                    className="flex items-center gap-2.5 rounded-full bg-stone-900 px-5 py-3.5 text-sm font-bold text-white shadow-2xl shadow-stone-950/40 hover:bg-amber-700 active:scale-95 transition-all"
+                    className="flex items-center gap-2.5 rounded-full bg-[#1C1917] px-5 py-3.5 text-sm font-bold text-white shadow-xl shadow-[#1C1917]/25 hover:bg-[#78350F] active:scale-95 transition-all"
                 >
                     <ShoppingCart className="size-4" />
-                    <span>Order Cart</span>
-                    <span className="flex size-5 items-center justify-center rounded-full bg-amber-500 text-[11px] font-extrabold text-stone-950">
+                    <span>Order Ticket</span>
+                    <span className="flex size-5 items-center justify-center rounded-full bg-[#78350F] text-[11px] font-extrabold text-white">
                         {cartItemCount}
                     </span>
                 </button>
@@ -1010,10 +1061,10 @@ export function POSPage() {
                         type="button"
                         aria-label="Close cart"
                         onClick={() => setMobileCartOpen(false)}
-                        className="absolute inset-0 bg-black/40"
+                        className="absolute inset-0 bg-black/40 backdrop-blur-2xs"
                     />
 
-                    <div className="absolute inset-y-0 right-0 flex w-full max-w-md flex-col bg-white shadow-2xl">
+                    <div className="absolute inset-y-0 right-0 flex w-full max-w-md flex-col bg-white shadow-2xl animate-in slide-in-from-right duration-200">
                         <CartPanel
                             items={cartItems}
                             onIncrease={increaseQuantity}

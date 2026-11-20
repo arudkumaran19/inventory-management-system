@@ -20,24 +20,24 @@ export function ProductGrid({
 }: ProductGridProps) {
     if (products.length === 0) {
         return (
-            <div className="flex min-h-80 flex-col items-center justify-center rounded-2xl border border-dashed border-stone-300 bg-white/70 p-8 text-center backdrop-blur-xs">
-                <div className="flex size-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-700 ring-1 ring-amber-200/60 shadow-xs">
-                    <SearchX className="size-6" />
+            <div className="flex min-h-80 flex-col items-center justify-center rounded-2xl border border-dashed border-[#D8D1C5] bg-white/70 p-8 text-center">
+                <div className="flex size-14 items-center justify-center rounded-2xl bg-[#FAF8F5] text-[#78350F] border border-[#E8E3DB] shadow-xs">
+                    <SearchX className="size-6 text-[#78350F]" />
                 </div>
 
-                <h3 className="mt-4 text-base font-bold text-stone-900">
-                    No beverages or items found
+                <h3 className="mt-4 font-serif-brand text-base font-bold text-[#1C1917]">
+                    No Menu Items Found
                 </h3>
 
-                <p className="mt-1 max-w-sm text-xs leading-relaxed text-stone-500">
-                    We couldn't find any menu items matching your filter or search query. Try clearing the search or switching filters.
+                <p className="mt-1 max-w-sm text-xs leading-relaxed text-[#78716C]">
+                    We couldn't find any café items matching your search or category filter. Try clearing the query or selecting another tab.
                 </p>
             </div>
         )
     }
 
     return (
-        <div className="grid grid-cols-1 gap-4.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4">
             {products.map((product) => (
                 <ProductCard
                     key={product.id}
