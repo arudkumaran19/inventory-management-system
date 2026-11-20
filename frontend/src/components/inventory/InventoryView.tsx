@@ -4,20 +4,27 @@ import {
     AlertTriangle,
     Archive,
     Boxes,
+    Coffee,
     Edit3,
+    History,
     Package,
     Plus,
     RefreshCw,
     Search,
+    ShieldCheck,
     Sparkles,
     Trash2,
     X,
 } from "lucide-react"
+import { IngredientsModal } from "./IngredientsModal"
+import { AuditTrailModal } from "../audit/AuditTrailModal"
 import {
     createProduct,
     deleteProduct,
+    getInventoryLogs,
     getProducts,
     updateProduct,
+    type InventoryLog,
     type Product,
 } from "../../lib/api"
 
@@ -25,12 +32,16 @@ type ProductForm = {
     name: string
     price: string
     available_stock: string
+    category: string
+    adjustment_reason: string
 }
 
 const emptyForm: ProductForm = {
     name: "",
     price: "",
     available_stock: "",
+    category: "Coffee",
+    adjustment_reason: "Supplier Delivery",
 }
 
 function getStockLabel(stock: number) {
@@ -80,6 +91,23 @@ export function InventoryView() {
     const [editingProduct, setEditingProduct] = useState<Product | null>(null)
     const [form, setForm] = useState<ProductForm>(emptyForm)
     const [formError, setFormError] = useState("")
+    const [inventoryLogs, setInventoryLogs] = useState<InventoryLog[]>([])
+    const [isLogsModalOpen, setIsLogsModalOpen] = useState(false)
+    const [logsLoading, setLogsLoading] = useState(false)
+    const [isIngredientsModalOpen, setIsIngredientsModalOpen] = useState(false)
+    const [isAuditTrailModalOpen, setIsAuditTrailModalOpen] = useState(false)
+
+    async function loadLogs() {
+        try {
+            setLogsLoading(true)
+            const data = await getInventoryLogs()
+            setInventoryLogs(data)
+        } catch {
+            // ignore
+        } finally {
+            setLogsLoading(false)
+        }
+    }
 
     async function loadProducts() {
         setLoading(true)
@@ -210,6 +238,8 @@ export function InventoryView() {
             name: product.name,
             price: product.price,
             available_stock: String(product.available_stock),
+            category: product.category || "Coffee",
+            adjustment_reason: "Inventory Recount",
         })
 
         setFormError("")
@@ -279,6 +309,8 @@ export function InventoryView() {
                 name: form.name.trim(),
                 price: Number(form.price),
                 available_stock: Number(form.available_stock),
+                category: form.category || "Coffee",
+                adjustment_reason: form.adjustment_reason || undefined,
             }
 
             if (editingProduct) {
@@ -420,7 +452,37 @@ export function InventoryView() {
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex flex-wrap items-center gap-2.5">
+                        <button
+                            type="button"
+                            onClick={() => setIsIngredientsModalOpen(true)}
+                            className="inline-flex items-center gap-2 rounded-xl border border-[#E8E3DB] bg-white px-3.5 py-2.5 text-xs font-semibold text-[#1C1917] shadow-xs hover:bg-[#FAF8F5] hover:border-[#D6CEC4] transition-all cursor-pointer"
+                        >
+                            <Coffee className="size-3.5 text-[#78350F]" />
+                            BOM Ingredients
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => setIsAuditTrailModalOpen(true)}
+                            className="inline-flex items-center gap-2 rounded-xl border border-[#C8E3CE] bg-[#EDF6EE] px-3.5 py-2.5 text-xs font-semibold text-[#215A36] shadow-xs hover:bg-[#E2F0E4] transition-all cursor-pointer"
+                        >
+                            <ShieldCheck className="size-3.5 text-[#215A36]" />
+                            Immutable Audit Trail
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => {
+                                void loadLogs()
+                                setIsLogsModalOpen(true)
+                            }}
+                            className="inline-flex items-center gap-2 rounded-xl border border-[#E8E3DB] bg-white px-3.5 py-2.5 text-xs font-semibold text-[#1C1917] shadow-xs hover:bg-[#FAF8F5] hover:border-[#D6CEC4] transition-all cursor-pointer"
+                        >
+                            <History className="size-3.5 text-[#78350F]" />
+                            Stock Changes
+                        </button>
+
                         <button
                             type="button"
                             onClick={() => void loadProducts()}
@@ -712,6 +774,14 @@ export function InventoryView() {
                                                                 <span className="text-[11px] font-medium text-[#A8A29E] tnum">
                                                                     ID #{product.id}
                                                                 </span>
+                                                                {product.category && (
+                                                                    <>
+                                                                        <span className="text-[10px] text-[#D6CEC4]">•</span>
+                                                                        <span className="inline-flex items-center rounded-md bg-[#FAF8F5] px-1.5 py-0.5 text-[10px] font-medium text-[#78716C] border border-[#E8E3DB]">
+                                                                            {product.category}
+                                                                        </span>
+                                                                    </>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -991,6 +1061,58 @@ export function InventoryView() {
                                 </div>
                             </div>
 
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <div>
+                                    <label
+                                        htmlFor="product-category"
+                                        className="mb-1.5 block text-xs font-bold text-[#1C1917] uppercase tracking-wider"
+                                    >
+                                        Category
+                                    </label>
+                                    <select
+                                        id="product-category"
+                                        value={form.category}
+                                        onChange={(event) =>
+                                            updateForm("category", event.target.value)
+                                        }
+                                        disabled={saving}
+                                        className="w-full rounded-xl border border-[#E8E3DB] bg-[#FAF8F5]/60 px-3.5 py-2.5 text-sm font-semibold text-[#1C1917] outline-none transition focus:bg-white focus:border-[#78350F] focus:ring-2 focus:ring-[#78350F]/20 disabled:bg-[#F5F2EB]"
+                                    >
+                                        <option value="Coffee">Coffee</option>
+                                        <option value="Cold Drinks">Cold Drinks</option>
+                                        <option value="Tea">Tea</option>
+                                        <option value="Bakery">Bakery</option>
+                                        <option value="Retail">Retail</option>
+                                    </select>
+                                </div>
+
+                                {editingProduct && (
+                                    <div>
+                                        <label
+                                            htmlFor="product-reason"
+                                            className="mb-1.5 block text-xs font-bold text-[#1C1917] uppercase tracking-wider"
+                                        >
+                                            Stock Adjustment Reason
+                                        </label>
+                                        <select
+                                            id="product-reason"
+                                            value={form.adjustment_reason}
+                                            onChange={(event) =>
+                                                updateForm("adjustment_reason", event.target.value)
+                                            }
+                                            disabled={saving}
+                                            className="w-full rounded-xl border border-[#E8E3DB] bg-[#FAF8F5]/60 px-3.5 py-2.5 text-sm font-semibold text-[#1C1917] outline-none transition focus:bg-white focus:border-[#78350F] focus:ring-2 focus:ring-[#78350F]/20 disabled:bg-[#F5F2EB]"
+                                        >
+                                            <option value="Inventory Recount">Inventory Recount / Audit</option>
+                                            <option value="Supplier Delivery">Supplier Delivery / Restock</option>
+                                            <option value="Spillage / Spoiled">Spillage / Spoiled Goods</option>
+                                            <option value="Damaged Goods Write-off">Damaged Goods Write-off</option>
+                                            <option value="Manual Correction">Manual Correction</option>
+                                        </select>
+                                    </div>
+                                )}
+                            </div>
+
                             <div className="flex justify-end gap-2.5 border-t border-[#E8E3DB] pt-5">
                                 <button
                                     type="button"
@@ -1019,6 +1141,130 @@ export function InventoryView() {
                     </div>
                 </div>
             )}
+
+            {/* Audit Log Modal */}
+            {isLogsModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+                    <div className="w-full max-w-4xl max-h-[85vh] rounded-3xl border border-[#E8E3DB] bg-white shadow-2xl flex flex-col overflow-hidden">
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between border-b border-[#E8E3DB] bg-[#FAF8F5] px-6 py-4 shrink-0">
+                            <div className="flex items-center gap-3">
+                                <div className="flex size-9 items-center justify-center rounded-xl bg-[#FEF8EC] text-[#78350F] border border-[#F2DEBA]">
+                                    <History className="size-4" />
+                                </div>
+                                <div>
+                                    <h2 className="font-serif-brand text-base font-bold text-[#1C1917]">
+                                        Inventory Audit Log
+                                    </h2>
+                                    <p className="text-xs text-[#78716C]">
+                                        Detailed ledger of all stock adjustments, recounts, and write-offs.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={() => setIsLogsModalOpen(false)}
+                                className="rounded-lg p-1.5 text-[#78716C] hover:bg-[#F5F2EB] hover:text-[#1C1917] transition cursor-pointer"
+                                aria-label="Close"
+                            >
+                                <X className="size-5" />
+                            </button>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div className="flex-1 overflow-y-auto p-6">
+                            {logsLoading ? (
+                                <div className="flex items-center justify-center py-12 gap-2 text-sm text-[#78716C]">
+                                    <RefreshCw className="size-4 animate-spin text-[#78350F]" />
+                                    Loading stock adjustment history...
+                                </div>
+                            ) : inventoryLogs.length === 0 ? (
+                                <div className="py-12 text-center text-sm text-[#78716C]">
+                                    No stock adjustment logs recorded yet.
+                                </div>
+                            ) : (
+                                <table className="w-full text-left border-collapse text-xs">
+                                    <thead>
+                                        <tr className="border-b border-[#E8E3DB] text-[#78716C] uppercase font-bold tracking-wider">
+                                            <th className="pb-3 px-3">Date & Time</th>
+                                            <th className="pb-3 px-3">Product ID</th>
+                                            <th className="pb-3 px-3">Stock Change</th>
+                                            <th className="pb-3 px-3">New Level</th>
+                                            <th className="pb-3 px-3">Reason</th>
+                                            <th className="pb-3 px-3">User ID</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-[#E8E3DB]/60">
+                                        {inventoryLogs.map((log) => {
+                                            const isIncrease = log.change_amount > 0
+                                            return (
+                                                <tr key={log.id} className="hover:bg-[#FAF8F5]/80">
+                                                    <td className="py-3 px-3 text-[#1C1917] font-medium whitespace-nowrap">
+                                                        {new Date(log.created_at).toLocaleString([], {
+                                                            month: "short",
+                                                            day: "numeric",
+                                                            hour: "2-digit",
+                                                            minute: "2-digit",
+                                                        })}
+                                                    </td>
+                                                    <td className="py-3 px-3 text-[#78716C] font-mono">
+                                                        #{log.product_id}
+                                                    </td>
+                                                    <td className="py-3 px-3">
+                                                        <span
+                                                            className={[
+                                                                "inline-flex items-center px-2 py-0.5 rounded font-bold tnum",
+                                                                isIncrease
+                                                                    ? "bg-emerald-50 text-emerald-800"
+                                                                    : "bg-rose-50 text-rose-800",
+                                                            ].join(" ")}
+                                                        >
+                                                            {isIncrease ? `+${log.change_amount}` : log.change_amount}
+                                                        </span>
+                                                    </td>
+                                                    <td className="py-3 px-3 font-semibold text-[#1C1917] tnum">
+                                                        {log.new_stock}
+                                                    </td>
+                                                    <td className="py-3 px-3 text-[#44403C]">
+                                                        {log.reason || "Manual update"}
+                                                    </td>
+                                                    <td className="py-3 px-3 text-[#78716C] font-mono">
+                                                        {log.user_id ? `User #${log.user_id}` : "System"}
+                                                    </td>
+                                                </tr>
+                                            )
+                                        })}
+                                    </tbody>
+                                </table>
+                            )}
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="border-t border-[#E8E3DB] bg-[#FAF8F5] px-6 py-3 flex justify-end shrink-0">
+                            <button
+                                type="button"
+                                onClick={() => setIsLogsModalOpen(false)}
+                                className="rounded-xl border border-[#E8E3DB] bg-white px-4 py-2 text-xs font-semibold text-[#1C1917] shadow-2xs hover:bg-[#F5F2EB] transition cursor-pointer"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Ingredients & BOM Modal */}
+            <IngredientsModal
+                isOpen={isIngredientsModalOpen}
+                onClose={() => setIsIngredientsModalOpen(false)}
+            />
+
+            {/* Cryptographic Audit Trail Modal */}
+            <AuditTrailModal
+                isOpen={isAuditTrailModalOpen}
+                onClose={() => setIsAuditTrailModalOpen(false)}
+            />
 
             {/* Error & Success Toasts */}
             <Toast

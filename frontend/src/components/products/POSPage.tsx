@@ -1,28 +1,34 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
     ArrowRight,
+    BookmarkCheck,
     CheckCircle2,
     Clock,
     CreditCard,
+    DollarSign,
     Loader2,
     PackageSearch,
+    Printer,
     ShoppingCart,
-    Undo2,
-    XCircle,
 } from "lucide-react"
 import { ToastStack, type ToastItemData, type ToastVariant } from "../ui/Toast"
 
 import {
     addCartItem,
+    applyCartDiscount,
     cancelOrder,
     checkoutCart,
     createCart,
     getCart,
     getOrder,
+    getParkedCarts,
     getProducts,
+    parkCart,
     processPayment,
     removeCartItem,
+    resumeCart,
     updateCartItemQuantity,
+    type Cart as ApiCart,
     type CheckoutResponse,
     type Product as ApiProduct,
 } from "../../lib/api"
@@ -37,6 +43,8 @@ import {
     CartPanel,
     type CartItem,
 } from "../cart/CartPanel"
+import { ReceiptModal } from "../orders/ReceiptModal"
+import { getCachedProducts, saveCachedProducts } from "../../lib/offlineStore"
 
 const CART_ID_KEY = "pos_cart_id"
 const CART_ITEMS_KEY = "pos_cart_items"
@@ -49,6 +57,7 @@ function mapProduct(product: ApiProduct): Product {
         name: product.name,
         price: Number(product.price),
         stock: product.available_stock,
+        category: product.category,
     }
 }
 
@@ -139,6 +148,13 @@ export function POSPage() {
         useState<CheckoutResponse | null>(persisted.checkoutResponse)
 
     const [paymentLoading, setPaymentLoading] = useState(false)
+    const [parkedCarts, setParkedCarts] = useState<ApiCart[]>([])
+    const [discountPercent, setDiscountPercent] = useState<number>(0)
+    const [discountReason, setDiscountReason] = useState<string | null>(null)
+    const [tenderMethod, setTenderMethod] = useState<"cash" | "card">("cash")
+    const [cashTendered, setCashTendered] = useState<string>("")
+    const [cardRefId, setCardRefId] = useState<string>("")
+    const [showReceiptModal, setShowReceiptModal] = useState(false)
 
     // Stacked, non-overlapping toast notification system
     const [toasts, setToasts] = useState<ToastItemData[]>([])
@@ -205,14 +221,17 @@ export function POSPage() {
                 const response = await getProducts()
 
                 if (!cancelled) {
-                    setProducts(
-                        response
-                            .filter((product) => product.is_active)
-                            .map(mapProduct),
-                    )
+                    const mapped = response
+                        .filter((product) => product.is_active)
+                        .map(mapProduct)
+                    setProducts(mapped)
+                    void saveCachedProducts(mapped)
                 }
             } catch (requestError) {
-                if (!cancelled && isInitial) {
+                const cached = await getCachedProducts<Product>()
+                if (!cancelled && cached.length > 0) {
+                    setProducts(cached)
+                } else if (!cancelled && isInitial) {
                     setError(
                         requestError instanceof Error
                             ? requestError.message
@@ -373,31 +392,18 @@ export function POSPage() {
 
             let matchesCategory = true
             if (categoryFilter !== "all") {
+                const cat = (product.category || "").toLowerCase()
                 const name = product.name.toLowerCase()
                 if (categoryFilter === "coffee") {
-                    matchesCategory =
-                        (name.includes("espresso") ||
-                            name.includes("cappuccino") ||
-                            name.includes("latte") ||
-                            name.includes("coffee") ||
-                            name.includes("americano")) &&
-                        !name.includes("iced") &&
-                        !name.includes("cold") &&
-                        !name.includes("beans")
+                    matchesCategory = cat.includes("coffee") || name.includes("espresso") || name.includes("latte") || name.includes("cappuccino")
                 } else if (categoryFilter === "cold") {
-                    matchesCategory = name.includes("cold") || name.includes("iced")
+                    matchesCategory = cat.includes("cold") || name.includes("cold") || name.includes("iced")
                 } else if (categoryFilter === "tea") {
-                    matchesCategory = name.includes("matcha") || name.includes("tea") || name.includes("chai")
+                    matchesCategory = cat.includes("tea") || name.includes("matcha") || name.includes("tea")
                 } else if (categoryFilter === "bakery") {
-                    matchesCategory =
-                        name.includes("croissant") ||
-                        name.includes("muffin") ||
-                        name.includes("cookie") ||
-                        name.includes("pastry") ||
-                        name.includes("cake") ||
-                        name.includes("bread")
+                    matchesCategory = cat.includes("bakery") || name.includes("croissant") || name.includes("muffin")
                 } else if (categoryFilter === "retail") {
-                    matchesCategory = name.includes("beans") || name.includes("bottle") || name.includes("bag")
+                    matchesCategory = cat.includes("retail") || name.includes("bean") || name.includes("bottle")
                 }
             }
 
@@ -709,17 +715,114 @@ export function POSPage() {
         }
     }
 
+    const loadParkedCarts = useCallback(async () => {
+        try {
+            const list = await getParkedCarts()
+            setParkedCarts(list)
+        } catch {
+            // ignore
+        }
+    }, [])
+
+    useEffect(() => {
+        let ignore = false
+        getParkedCarts()
+            .then((list) => {
+                if (!ignore) {
+                    setParkedCarts(list)
+                }
+            })
+            .catch(() => {})
+        return () => {
+            ignore = true
+        }
+    }, [])
+
+    const handleParkOrder = async (label: string) => {
+        if (!cartId || cartItems.length === 0) return
+        try {
+            await parkCart(cartId, label)
+            addToast(`Order parked for "${label}". Started fresh order.`, "success", 4000)
+            const freshCart = await createCart()
+            setCartId(freshCart.id)
+            setCartItems([])
+            setDiscountPercent(0)
+            setDiscountReason(null)
+            void loadParkedCarts()
+        } catch (err) {
+            addToast(err instanceof Error ? err.message : "Couldn't park order", "error")
+        }
+    }
+
+    const handleResumeParkedCart = async (parked: ApiCart) => {
+        try {
+            await resumeCart(parked.id)
+            setCartId(parked.id)
+            setCartItems(
+                parked.items.map((i) => {
+                    const prod = products.find((p) => p.id === i.product_id)
+                    return {
+                        id: i.product_id,
+                        name: prod ? prod.name : `Item #${i.product_id}`,
+                        price: prod ? prod.price : 0,
+                        quantity: i.quantity,
+                        notes: i.notes,
+                    }
+                }),
+            )
+            setDiscountPercent(parked.discount_percent || 0)
+            setDiscountReason(parked.discount_reason || null)
+            setCheckoutResponse(null)
+            addToast(`Resumed parked order "${parked.label || `#${parked.id}`}".`, "info", 4000)
+            void loadParkedCarts()
+        } catch (err) {
+            addToast(err instanceof Error ? err.message : "Couldn't resume order", "error")
+        }
+    }
+
+    const handleApplyDiscount = async (percent: number, reason: string) => {
+        if (!cartId) return
+        try {
+            await applyCartDiscount(cartId, percent, reason)
+            setDiscountPercent(percent)
+            setDiscountReason(reason)
+            addToast(`Applied ${percent}% discount (${reason}).`, "success", 4000)
+        } catch (err) {
+            addToast(err instanceof Error ? err.message : "Couldn't apply discount", "error")
+        }
+    }
+
+    const handleUpdateNotes = (productId: number, notes: string) => {
+        setCartItems((prev) =>
+            prev.map((item) => (item.id === productId ? { ...item, notes } : item)),
+        )
+        addToast("Note attached to item.", "success", 2500)
+    }
+
     const handleStartNewOrder = async () => {
         try {
             const newCart = await createCart()
             setCartId(newCart.id)
             setCartItems([])
+            setDiscountPercent(0)
+            setDiscountReason(null)
+            setCashTendered("")
+            setCardRefId("")
             setCheckoutResponse(null)
             idempotencyKeyRef.current = null
         } catch (err) {
             console.error(err)
         }
     }
+
+    const orderSubtotal = cartItems.reduce(
+        (total, item) => total + item.price * item.quantity,
+        0,
+    )
+    const orderDiscountAmount = discountPercent > 0 ? (orderSubtotal * discountPercent) / 100 : 0
+    const orderTotalAmount = Math.max(0, orderSubtotal - orderDiscountAmount)
+    const tenderedVal = parseFloat(cashTendered) || 0
+    const changeDueAmount = Math.max(0, tenderedVal - orderTotalAmount)
 
     const handlePayment = async (
         outcome: "success" | "failure" | "timeout",
@@ -732,6 +835,10 @@ export function POSPage() {
             idempotencyKeyRef.current ??
             `pos-${checkoutResponse.order.id}-payment`
 
+        const isCash = tenderMethod === "cash"
+        const tendered = isCash ? (tenderedVal > 0 ? tenderedVal : orderTotalAmount) : undefined
+        const change = isCash ? (tenderedVal >= orderTotalAmount ? tenderedVal - orderTotalAmount : 0) : undefined
+
         try {
             setPaymentLoading(true)
 
@@ -740,6 +847,10 @@ export function POSPage() {
                 {
                     idempotency_key: idempotencyKey,
                     outcome,
+                    method: tenderMethod,
+                    amount_tendered: tendered,
+                    change_due: change,
+                    reference_id: !isCash && cardRefId.trim() ? cardRefId.trim() : undefined,
                 },
             )
 
@@ -750,24 +861,37 @@ export function POSPage() {
                         ? "Failed"
                         : "Expired"
 
-            setCheckoutResponse((current) =>
-                current
-                    ? {
-                        ...current,
-                        order: {
-                            ...current.order,
-                            status: orderStatus,
-                        },
-                    }
-                    : current,
-            )
+            const finalOrder = {
+                ...checkoutResponse.order,
+                status: orderStatus,
+                discount_percent: discountPercent,
+                discount_amount: orderDiscountAmount,
+                discount_reason: discountReason,
+                payment: {
+                    id: response.id,
+                    order_id: response.order_id,
+                    idempotency_key: response.idempotency_key,
+                    status: response.status,
+                    method: tenderMethod,
+                    amount_tendered: tendered ?? null,
+                    change_due: change ?? null,
+                    reference_id: !isCash ? cardRefId : null,
+                    processed_at: response.processed_at,
+                },
+            }
+
+            setCheckoutResponse({
+                ...checkoutResponse,
+                order: finalOrder,
+            })
 
             if (outcome === "success") {
                 addToast(
-                    `Payment received. Order #${response.order_id} complete.`,
+                    `Payment received via ${tenderMethod.toUpperCase()}. Order #${response.order_id} complete.`,
                     "success",
                     5000,
                 )
+                setShowReceiptModal(true)
             } else if (outcome === "failure") {
                 addToast(
                     `Payment declined. Order #${response.order_id} cancelled.`,
@@ -794,6 +918,10 @@ export function POSPage() {
             const newCart = await createCart()
             setCartId(newCart.id)
             setCartItems([])
+            setDiscountPercent(0)
+            setDiscountReason(null)
+            setCashTendered("")
+            setCardRefId("")
             idempotencyKeyRef.current = null
         } catch (requestError) {
             const message =
@@ -839,6 +967,28 @@ export function POSPage() {
                             </p>
                         </div>
                     </div>
+
+                    {/* Parked Orders Bar */}
+                    {parkedCarts.length > 0 && (
+                        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-[#F7E0B5] bg-[#FEF8EC] p-3 shadow-2xs">
+                            <div className="flex items-center gap-1.5 text-xs font-bold text-[#8C4E08] mr-2">
+                                <BookmarkCheck className="size-4 text-[#B45309]" />
+                                <span>Held Orders ({parkedCarts.length}):</span>
+                            </div>
+                            {parkedCarts.map((p) => (
+                                <button
+                                    key={p.id}
+                                    type="button"
+                                    onClick={() => void handleResumeParkedCart(p)}
+                                    className="inline-flex items-center gap-1.5 rounded-xl border border-[#E8E3DB] bg-white px-3 py-1.5 text-xs font-bold text-[#1C1917] hover:border-[#78350F] hover:bg-[#FAF8F5] transition-all shadow-2xs"
+                                >
+                                    <span className="size-2 rounded-full bg-[#B45309]" />
+                                    <span>{p.label || `Order #${p.id}`}</span>
+                                    <span className="text-[10px] text-stone-400">({p.items.length} items)</span>
+                                </button>
+                            ))}
+                        </div>
+                    )}
 
                     {/* Toolbar with Categories and Filters */}
                     <ProductToolbar
@@ -906,68 +1056,183 @@ export function POSPage() {
 
                             <div className="pt-3">
                                 {checkoutResponse.order.status === "Reserved" ? (
-                                    <>
-                                        <div className="flex items-center justify-between text-xs text-[#78716C]">
-                                            <p className="font-medium">
-                                                Record payment:
-                                            </p>
-                                        </div>
-
-                                        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                                    <div className="space-y-3">
+                                        {/* Tender method selector */}
+                                        <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
-                                                disabled={paymentLoading}
-                                                onClick={() => void handlePayment("success")}
-                                                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#215A36] px-3.5 text-xs font-bold text-white shadow-xs hover:bg-[#184428] disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 transition-all"
+                                                onClick={() => setTenderMethod("cash")}
+                                                className={`flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold border transition-all ${
+                                                    tenderMethod === "cash"
+                                                        ? "bg-[#78350F] text-white border-[#78350F] shadow-xs"
+                                                        : "bg-white text-stone-700 border-[#E8E3DB] hover:bg-[#FAF8F5]"
+                                                }`}
                                             >
-                                                <CheckCircle2 className="size-4" />
-                                                Payment Received
+                                                <DollarSign className="size-4" />
+                                                <span>Cash Tender</span>
                                             </button>
-
                                             <button
                                                 type="button"
-                                                disabled={paymentLoading}
-                                                onClick={() => void handlePayment("failure")}
-                                                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#9B2C2C] px-3.5 text-xs font-bold text-white shadow-xs hover:bg-[#7D2323] disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 transition-all"
+                                                onClick={() => setTenderMethod("card")}
+                                                className={`flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold border transition-all ${
+                                                    tenderMethod === "card"
+                                                        ? "bg-[#78350F] text-white border-[#78350F] shadow-xs"
+                                                        : "bg-white text-stone-700 border-[#E8E3DB] hover:bg-[#FAF8F5]"
+                                                }`}
                                             >
-                                                <XCircle className="size-4" />
-                                                Payment Declined
-                                            </button>
-
-                                            <button
-                                                type="button"
-                                                disabled={paymentLoading}
-                                                onClick={() => void handlePayment("timeout")}
-                                                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#1C1917] px-3.5 text-xs font-bold text-white shadow-xs hover:bg-[#292524] disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 transition-all"
-                                            >
-                                                <Clock className="size-4" />
-                                                Payment Timeout
-                                            </button>
-
-                                            <button
-                                                type="button"
-                                                disabled={paymentLoading}
-                                                onClick={() => void handleCancelReservation()}
-                                                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-[#D8D1C5] bg-white px-3.5 text-xs font-bold text-[#78350F] hover:bg-[#FAF8F5] disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 transition-all"
-                                            >
-                                                <Undo2 className="size-4" />
-                                                Cancel Order
+                                                <CreditCard className="size-4" />
+                                                <span>Card Terminal</span>
                                             </button>
                                         </div>
-                                    </>
+
+                                        {/* Amount to pay display */}
+                                        <div className="rounded-xl bg-white border border-[#E8E3DB] p-3 flex items-center justify-between">
+                                            <div>
+                                                <p className="text-[11px] font-medium text-stone-500">Total Amount Due</p>
+                                                <p className="font-serif-brand text-lg font-bold text-[#1C1917]">
+                                                    ${orderTotalAmount.toFixed(2)}
+                                                </p>
+                                            </div>
+                                            {tenderMethod === "cash" && changeDueAmount > 0 && (
+                                                <div className="text-right">
+                                                    <p className="text-[11px] font-medium text-[#215A36]">Change Due</p>
+                                                    <p className="font-serif-brand text-lg font-extrabold text-[#215A36]">
+                                                        ${changeDueAmount.toFixed(2)}
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {tenderMethod === "cash" ? (
+                                            <div className="space-y-2">
+                                                {/* Quick Cash Presets */}
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {[
+                                                        { label: `Exact ($${orderTotalAmount.toFixed(2)})`, val: orderTotalAmount.toFixed(2) },
+                                                        { label: "$10.00", val: "10.00" },
+                                                        { label: "$20.00", val: "20.00" },
+                                                        { label: "$50.00", val: "50.00" },
+                                                        { label: "$100.00", val: "100.00" },
+                                                    ].map((preset) => (
+                                                        <button
+                                                            key={preset.label}
+                                                            type="button"
+                                                            onClick={() => setCashTendered(preset.val)}
+                                                            className="rounded-lg border border-[#E8E3DB] bg-white px-2.5 py-1 text-xs font-bold text-stone-700 hover:bg-stone-50 shadow-2xs"
+                                                        >
+                                                            {preset.label}
+                                                        </button>
+                                                    ))}
+                                                </div>
+
+                                                <div className="flex gap-2">
+                                                    <div className="relative flex-1">
+                                                        <DollarSign className="absolute left-3 top-2.5 size-4 text-stone-400" />
+                                                        <input
+                                                            type="number"
+                                                            step="0.01"
+                                                            value={cashTendered}
+                                                            onChange={(e) => setCashTendered(e.target.value)}
+                                                            placeholder="Cash tendered"
+                                                            className="w-full rounded-xl border border-[#E8E3DB] bg-white py-2 pl-9 pr-3 text-xs font-semibold text-[#1C1917] focus:border-[#78350F] focus:outline-hidden"
+                                                        />
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        disabled={paymentLoading || (tenderedVal < orderTotalAmount && tenderedVal !== 0)}
+                                                        onClick={() => void handlePayment("success")}
+                                                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl bg-[#215A36] px-4 text-xs font-bold text-white shadow-xs hover:bg-[#184428] disabled:opacity-40"
+                                                    >
+                                                        <CheckCircle2 className="size-3.5" />
+                                                        Complete Cash Sale
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    value={cardRefId}
+                                                    onChange={(e) => setCardRefId(e.target.value)}
+                                                    placeholder="Terminal Auth Code / Ref # (Optional)"
+                                                    className="flex-1 rounded-xl border border-[#E8E3DB] bg-white px-3 py-2 text-xs font-medium text-[#1C1917] focus:border-[#78350F] focus:outline-hidden"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    disabled={paymentLoading}
+                                                    onClick={() => void handlePayment("success")}
+                                                    className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl bg-[#215A36] px-4 text-xs font-bold text-white shadow-xs hover:bg-[#184428] disabled:opacity-40"
+                                                >
+                                                    <CheckCircle2 className="size-3.5" />
+                                                    Complete Card Sale
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {/* Simulation / Emergency actions */}
+                                        <div className="flex items-center justify-between pt-2 border-t border-[#E8E3DB]/70 text-[11px] text-stone-500">
+                                            <span>Simulation / Action:</span>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    type="button"
+                                                    disabled={paymentLoading}
+                                                    onClick={() => void handlePayment("failure")}
+                                                    className="text-[#9B2C2C] hover:underline"
+                                                >
+                                                    Decline
+                                                </button>
+                                                <span>·</span>
+                                                <button
+                                                    type="button"
+                                                    disabled={paymentLoading}
+                                                    onClick={() => void handlePayment("timeout")}
+                                                    className="text-stone-600 hover:underline"
+                                                >
+                                                    Timeout
+                                                </button>
+                                                <span>·</span>
+                                                <button
+                                                    type="button"
+                                                    disabled={paymentLoading}
+                                                    onClick={() => void handleCancelReservation()}
+                                                    className="text-[#78350F] font-semibold hover:underline"
+                                                >
+                                                    Cancel Order
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
                                 ) : (
-                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-[#E8E3DB] rounded-xl p-3">
-                                        <p className="text-xs font-medium text-[#1C1917]">
-                                            Order #{checkoutResponse.order.id} is {checkoutResponse.order.status.toLowerCase()}.
-                                        </p>
-                                        <button
-                                            type="button"
-                                            onClick={() => void handleStartNewOrder()}
-                                            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl bg-[#78350F] px-4 text-xs font-bold text-white hover:bg-[#5A270B] active:scale-95 transition-all shadow-xs"
-                                        >
-                                            New Order
-                                            <ArrowRight className="size-3.5" />
-                                        </button>
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-[#E8E3DB] rounded-xl p-3.5">
+                                        <div>
+                                            <p className="text-xs font-bold text-[#1C1917]">
+                                                Order #{checkoutResponse.order.id} is {checkoutResponse.order.status.toLowerCase()}.
+                                            </p>
+                                            {checkoutResponse.order.payment && (
+                                                <p className="text-[11px] text-stone-500">
+                                                    Paid via {checkoutResponse.order.payment.method.toUpperCase()}
+                                                    {checkoutResponse.order.payment.change_due ? ` · Change: $${Number(checkoutResponse.order.payment.change_due).toFixed(2)}` : ""}
+                                                </p>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowReceiptModal(true)}
+                                                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-[#78350F] bg-white px-3.5 text-xs font-bold text-[#78350F] hover:bg-[#FEF8EC] transition-all"
+                                            >
+                                                <Printer className="size-3.5" />
+                                                Receipt
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => void handleStartNewOrder()}
+                                                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl bg-[#78350F] px-4 text-xs font-bold text-white hover:bg-[#5A270B] active:scale-95 transition-all shadow-xs"
+                                            >
+                                                New Order
+                                                <ArrowRight className="size-3.5" />
+                                            </button>
+                                        </div>
                                     </div>
                                 )}
 
@@ -1015,10 +1280,15 @@ export function POSPage() {
             <aside className="hidden w-[380px] shrink-0 xl:block shadow-xs">
                 <CartPanel
                     items={cartItems}
+                    discountPercent={discountPercent}
+                    discountReason={discountReason}
                     onIncrease={increaseQuantity}
                     onDecrease={decreaseQuantity}
                     onRemove={removeFromCart}
                     onCheckout={handleCheckout}
+                    onParkOrder={handleParkOrder}
+                    onApplyDiscount={handleApplyDiscount}
+                    onUpdateNotes={handleUpdateNotes}
                     isCheckingOut={isCheckingOut}
                     reservedOrderId={
                         checkoutResponse && checkoutResponse.order.status === "Reserved"
@@ -1056,6 +1326,8 @@ export function POSPage() {
                     <div className="absolute inset-y-0 right-0 flex w-full max-w-md flex-col bg-white shadow-2xl animate-in slide-in-from-right duration-200">
                         <CartPanel
                             items={cartItems}
+                            discountPercent={discountPercent}
+                            discountReason={discountReason}
                             onIncrease={increaseQuantity}
                             onDecrease={decreaseQuantity}
                             onRemove={removeFromCart}
@@ -1064,6 +1336,9 @@ export function POSPage() {
                                 void handleCheckout()
                             }}
                             onClose={() => setMobileCartOpen(false)}
+                            onParkOrder={handleParkOrder}
+                            onApplyDiscount={handleApplyDiscount}
+                            onUpdateNotes={handleUpdateNotes}
                             isCheckingOut={isCheckingOut}
                             reservedOrderId={
                                 checkoutResponse && checkoutResponse.order.status === "Reserved"
@@ -1074,6 +1349,14 @@ export function POSPage() {
                     </div>
                 </div>
             )}
+
+            {/* Printable Receipt Modal */}
+            <ReceiptModal
+                order={checkoutResponse?.order || null}
+                isOpen={showReceiptModal}
+                onClose={() => setShowReceiptModal(false)}
+            />
+
             <ToastStack toasts={toasts} onDismiss={removeToast} />
         </div>
     )

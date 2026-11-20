@@ -1,17 +1,29 @@
-import { useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import {
     Bell,
     ChevronDown,
     CircleHelp,
+    Clock,
     Coffee,
     LogOut,
+    MapPin,
     Menu,
     Shield,
     ShieldCheck,
     ShoppingCart,
     Sparkles,
+    Wifi,
+    WifiOff,
 } from "lucide-react"
 import { useAuth } from "../../context/AuthContext"
+import {
+    getCurrentShift,
+    getLocations,
+    type Location,
+    type ShiftSummary,
+} from "../../lib/api"
+import { ShiftModal } from "./ShiftModal"
+import { AuditTrailModal } from "../audit/AuditTrailModal"
 
 type TopBarProps = {
     title: string
@@ -28,6 +40,63 @@ export function TopBar({
     const [openPanel, setOpenPanel] = useState<
         "notifications" | "help" | "profile" | null
     >(null)
+    const [shiftModalOpen, setShiftModalOpen] = useState(false)
+    const [currentShift, setCurrentShift] = useState<ShiftSummary | null>(null)
+    const [locations, setLocations] = useState<Location[]>([])
+    const [activeLocation, setActiveLocation] = useState<Location | null>(null)
+    const [isOnline, setIsOnline] = useState<boolean>(() =>
+        typeof navigator !== "undefined" ? navigator.onLine : true,
+    )
+    const [auditModalOpen, setAuditModalOpen] = useState(false)
+
+    useEffect(() => {
+        const handleOnline = () => setIsOnline(true)
+        const handleOffline = () => setIsOnline(false)
+        window.addEventListener("online", handleOnline)
+        window.addEventListener("offline", handleOffline)
+        return () => {
+            window.removeEventListener("online", handleOnline)
+            window.removeEventListener("offline", handleOffline)
+        }
+    }, [])
+
+    useEffect(() => {
+        let ignore = false
+        getLocations()
+            .then((list) => {
+                if (!ignore && list.length > 0) {
+                    setLocations(list)
+                    setActiveLocation(list[0])
+                }
+            })
+            .catch(() => {})
+        return () => {
+            ignore = true
+        }
+    }, [])
+
+    const loadShift = useCallback(async () => {
+        try {
+            const s = await getCurrentShift()
+            setCurrentShift(s)
+        } catch {
+            // ignore
+        }
+    }, [])
+
+    useEffect(() => {
+        let ignore = false
+        getCurrentShift()
+            .then((s) => {
+                if (!ignore) {
+                    setCurrentShift(s)
+                }
+            })
+            .catch(() => {})
+        return () => {
+            ignore = true
+        }
+    }, [])
 
     function togglePanel(panel: "notifications" | "help" | "profile") {
         setOpenPanel((current) => (current === panel ? null : panel))
@@ -48,15 +117,71 @@ export function TopBar({
                 )}
 
                 <div className="min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                         <span className="text-[11px] font-semibold text-[#78350F] tracking-wide uppercase">
                             Artisan Café
                         </span>
                         <span className="text-[#D8D1C5]">•</span>
-                        <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#78716C]">
-                            <span className="size-1.5 rounded-full bg-[#4E6047]" />
-                            POS Online
+
+                        {/* Location Branch Selector */}
+                        {locations.length > 0 && (
+                            <>
+                                <div className="inline-flex items-center gap-1 rounded-full bg-[#FAF8F5] px-2.5 py-0.5 border border-[#E8E3DB]">
+                                    <MapPin className="size-3 text-[#78350F]" />
+                                    <select
+                                        value={activeLocation?.id || ""}
+                                        onChange={(e) => {
+                                            const found = locations.find((l) => l.id === Number(e.target.value))
+                                            if (found) setActiveLocation(found)
+                                        }}
+                                        className="bg-transparent text-[11px] font-semibold text-[#1C1917] outline-none cursor-pointer border-none p-0 pr-1"
+                                    >
+                                        {locations.map((loc) => (
+                                            <option key={loc.id} value={loc.id}>
+                                                {loc.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <span className="text-[#D8D1C5]">•</span>
+                            </>
+                        )}
+
+                        {/* Online / Offline Connectivity Pill */}
+                        <span
+                            className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                                isOnline
+                                    ? "bg-[#EDF6EE] text-[#215A36] border-[#C8E3CE]"
+                                    : "bg-[#FEF8EC] text-[#8C4E08] border-[#F7E0B5]"
+                            }`}
+                        >
+                            {isOnline ? (
+                                <>
+                                    <Wifi className="size-3 text-[#4E6047]" />
+                                    <span>Online</span>
+                                </>
+                            ) : (
+                                <>
+                                    <WifiOff className="size-3 text-[#8C4E08]" />
+                                    <span>Offline (Queue Active)</span>
+                                </>
+                            )}
                         </span>
+                        <span className="text-[#D8D1C5]">•</span>
+
+                        {/* Shift Status Pill */}
+                        <button
+                            type="button"
+                            onClick={() => setShiftModalOpen(true)}
+                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold border transition-all ${
+                                currentShift
+                                    ? "bg-[#EDF6EE] text-[#215A36] border-[#C8E3CE] hover:bg-[#E2F0E4]"
+                                    : "bg-[#FEF8EC] text-[#8C4E08] border-[#F7E0B5] hover:bg-[#FDF2D9]"
+                            }`}
+                        >
+                            <Clock className="size-3" />
+                            <span>{currentShift ? `Shift Active ($${Number(currentShift.shift.opening_float).toFixed(0)} Float)` : "Open Shift"}</span>
+                        </button>
                     </div>
 
                     <h1 className="truncate font-serif-brand text-lg font-bold tracking-tight text-[#1C1917] sm:text-xl">
@@ -267,6 +392,22 @@ export function TopBar({
                                     </div>
                                 </div>
 
+                                {user.role === "manager" && (
+                                    <div className="pt-2 border-b border-[#E8E3DB] pb-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setOpenPanel(null)
+                                                setAuditModalOpen(true)
+                                            }}
+                                            className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-semibold text-[#1C1917] transition-colors hover:bg-[#FAF8F5] active:scale-[0.98]"
+                                        >
+                                            <ShieldCheck className="size-3.5 text-[#215A36]" />
+                                            <span>Audit Trail Ledger</span>
+                                        </button>
+                                    </div>
+                                )}
+
                                 <div className="pt-2">
                                     <button
                                         type="button"
@@ -285,6 +426,18 @@ export function TopBar({
                     </div>
                 )}
             </div>
+
+            <ShiftModal
+                isOpen={shiftModalOpen}
+                onClose={() => setShiftModalOpen(false)}
+                currentShift={currentShift}
+                onShiftUpdated={() => void loadShift()}
+            />
+
+            <AuditTrailModal
+                isOpen={auditModalOpen}
+                onClose={() => setAuditModalOpen(false)}
+            />
         </header>
     )
 }

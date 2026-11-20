@@ -11,6 +11,7 @@ export type Product = {
     name: string
     price: string
     available_stock: number
+    category: string
     is_active: boolean
 }
 
@@ -18,23 +19,41 @@ export type ProductCreate = {
     name: string
     price: number
     available_stock: number
+    category?: string
 }
 
 export type ProductUpdate = {
     name?: string
     price?: number
     available_stock?: number
+    category?: string
     is_active?: boolean
+    adjustment_reason?: string
+}
+
+export type InventoryLog = {
+    id: number
+    product_id: number
+    user_id?: number | null
+    previous_stock: number
+    new_stock: number
+    change_amount: number
+    reason: string
+    created_at: string
 }
 
 export type CartItem = {
     product_id: number
     quantity: number
+    notes?: string | null
 }
 
 export type Cart = {
     id: number
     status: string
+    label?: string | null
+    discount_percent?: number
+    discount_reason?: string | null
     items: CartItem[]
 }
 
@@ -43,6 +62,7 @@ export type OrderItem = {
     product_name: string
     quantity: number
     unit_price: string
+    notes?: string | null
 }
 
 export type HandledBy = {
@@ -52,10 +72,27 @@ export type HandledBy = {
     role: string
 }
 
+export type PaymentResponse = {
+    id: number
+    order_id: number
+    idempotency_key: string
+    status: string
+    method: string
+    amount_tendered?: number | null
+    change_due?: number | null
+    reference_id?: string | null
+    processed_at: string | null
+}
+
 export type Order = {
     id: number
     cart_id: number
     status: string
+    discount_percent?: number
+    discount_amount?: number
+    discount_reason?: string | null
+    table_or_customer?: string | null
+    payment?: PaymentResponse | null
     items: OrderItem[]
     created_at: string        // ISO-8601 UTC
     completed_at: string | null
@@ -72,14 +109,44 @@ export type PaymentOutcome = "success" | "failure" | "timeout"
 export type PaymentRequest = {
     idempotency_key: string
     outcome: PaymentOutcome
+    method?: string
+    amount_tendered?: number
+    change_due?: number
+    reference_id?: string
 }
 
-export type PaymentResponse = {
+export type RegisterShift = {
     id: number
-    order_id: number
-    idempotency_key: string
+    user_id: number
+    opened_at: string
+    closed_at?: string | null
+    opening_float: number
+    closing_cash_actual?: number | null
+    expected_cash?: number | null
+    card_total: number
     status: string
-    processed_at: string | null
+    notes?: string | null
+}
+
+export type ShiftSummary = {
+    shift: RegisterShift
+    cash_sales: number
+    card_sales: number
+    total_sales: number
+    total_orders: number
+    expected_cash: number
+    variance?: number | null
+}
+
+export type OrderAnalytics = {
+    gross_sales: number
+    net_sales: number
+    tax_included: number
+    total_refunds: number
+    paid_orders_count: number
+    cancelled_orders_count: number
+    avg_order_value: number
+    top_products: Array<{ name: string; quantity: number; revenue: number }>
 }
 
 let onUnauthorizedCallback: (() => void) | null = null
@@ -230,12 +297,14 @@ export async function addCartItem(
     cartId: number,
     productId: number,
     quantity: number,
+    notes?: string,
 ): Promise<Cart> {
     return request<Cart>(`/carts/${cartId}/items`, {
         method: "POST",
         body: JSON.stringify({
             product_id: productId,
             quantity,
+            notes,
         }),
     })
 }
@@ -305,4 +374,169 @@ export async function cancelOrder(orderId: number): Promise<Order> {
     return request<Order>(`/orders/${orderId}/cancel`, {
         method: "POST",
     })
+}
+
+export async function getInventoryLogs(): Promise<InventoryLog[]> {
+    return request<InventoryLog[]>("/products/inventory/logs")
+}
+
+export async function getParkedCarts(): Promise<Cart[]> {
+    return request<Cart[]>("/carts/parked")
+}
+
+export async function parkCart(cartId: number, label: string): Promise<Cart> {
+    return request<Cart>(`/carts/${cartId}/park`, {
+        method: "POST",
+        body: JSON.stringify({ label }),
+    })
+}
+
+export async function resumeCart(cartId: number): Promise<Cart> {
+    return request<Cart>(`/carts/${cartId}/resume`, {
+        method: "POST",
+    })
+}
+
+export async function applyCartDiscount(
+    cartId: number,
+    percent: number,
+    reason?: string,
+): Promise<Cart> {
+    return request<Cart>(`/carts/${cartId}/discount`, {
+        method: "POST",
+        body: JSON.stringify({
+            discount_percent: percent,
+            discount_reason: reason,
+        }),
+    })
+}
+
+export async function getCurrentShift(): Promise<ShiftSummary | null> {
+    return request<ShiftSummary | null>("/shifts/current")
+}
+
+export async function openShift(openingFloat: number): Promise<RegisterShift> {
+    return request<RegisterShift>("/shifts/open", {
+        method: "POST",
+        body: JSON.stringify({ opening_float: openingFloat }),
+    })
+}
+
+export async function closeShift(
+    shiftId: number,
+    closingCashActual: number,
+    notes?: string,
+): Promise<ShiftSummary> {
+    return request<ShiftSummary>(`/shifts/${shiftId}/close`, {
+        method: "POST",
+        body: JSON.stringify({
+            closing_cash_actual: closingCashActual,
+            notes,
+        }),
+    })
+}
+
+export async function getOrderAnalytics(): Promise<OrderAnalytics> {
+    return request<OrderAnalytics>("/orders/analytics/summary")
+}
+
+export function getOrderExportCsvUrl(): string {
+    return `${API_BASE_URL}/orders/export/csv`
+}
+
+export type Location = {
+    id: number
+    code: string
+    name: string
+    address?: string | null
+    phone?: string | null
+    is_active: boolean
+    created_at: string
+}
+
+export type Ingredient = {
+    id: number
+    name: string
+    unit: string
+    current_stock: number
+    reorder_threshold: number
+    cost_per_unit: number
+    is_active: boolean
+    created_at: string
+}
+
+export type RecipeItem = {
+    id: number
+    product_id: number
+    ingredient_id: number
+    quantity: number
+    ingredient_name?: string | null
+    ingredient_unit?: string | null
+}
+
+export type AuditLogEntry = {
+    id: number
+    sequence_number: number
+    timestamp: string
+    event_type: string
+    actor_id?: number | null
+    actor_email?: string | null
+    actor_role?: string | null
+    action: string
+    resource_type: string
+    resource_id?: string | null
+    payload?: string | null
+    ip_address?: string | null
+    previous_hash: string
+    record_hash: string
+}
+
+export type AuditChainVerification = {
+    valid: boolean
+    total_records: number
+    latest_sequence: number
+    chain_head_hash: string
+    verified_at: string
+    error?: string | null
+}
+
+export async function getLocations(): Promise<Location[]> {
+    return request<Location[]>("/locations")
+}
+
+export async function getIngredients(): Promise<Ingredient[]> {
+    return request<Ingredient[]>("/ingredients")
+}
+
+export async function updateIngredient(
+    id: number,
+    data: Partial<Ingredient> & { adjustment_reason?: string },
+): Promise<Ingredient> {
+    return request<Ingredient>(`/ingredients/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+    })
+}
+
+export async function getProductRecipe(productId: number): Promise<RecipeItem[]> {
+    return request<RecipeItem[]>(`/ingredients/recipes/${productId}`)
+}
+
+export async function setProductRecipe(
+    productId: number,
+    items: Array<{ ingredient_id: number; quantity: number }>,
+): Promise<RecipeItem[]> {
+    return request<RecipeItem[]>(`/ingredients/recipes/${productId}`, {
+        method: "POST",
+        body: JSON.stringify(items),
+    })
+}
+
+export async function getAuditLogs(eventType?: string): Promise<AuditLogEntry[]> {
+    const url = eventType ? `/audit-logs?event_type=${encodeURIComponent(eventType)}` : "/audit-logs"
+    return request<AuditLogEntry[]>(url)
+}
+
+export async function verifyAuditChain(): Promise<AuditChainVerification> {
+    return request<AuditChainVerification>("/audit-logs/verify")
 }
