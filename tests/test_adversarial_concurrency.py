@@ -346,6 +346,10 @@ def test_simultaneous_reservation_expiry_workers():
     """Verify skip_locked prevents race conditions when two expiry workers run simultaneously."""
     setup_db = SessionLocal()
     try:
+        # Clean up any leftover expired reservations from earlier tests before testing concurrency
+        clean_svc = ReservationExpiryService(setup_db)
+        clean_svc.expire_due_reservations()
+
         p = Product(name="Expiry Race Product", price=Decimal("4.50"), available_stock=5)
         setup_db.add(p)
         setup_db.flush()
