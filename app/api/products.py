@@ -5,6 +5,7 @@ from app.api.deps import get_current_user, require_role
 from app.db.session import get_db
 from app.models.user import User, UserRole
 from app.schemas.product import (
+    InventoryLogResponse,
     ProductCreate,
     ProductResponse,
     ProductUpdate,
@@ -29,7 +30,7 @@ def create_product(
     db: Session = Depends(get_db),
 ):
     service = ProductService(db)
-    return service.create_product(data)
+    return service.create_product(data, user_id=current_user.id)
 
 
 @router.get(
@@ -42,6 +43,18 @@ def get_products(
 ):
     service = ProductService(db)
     return service.get_products()
+
+
+@router.get(
+    "/inventory/logs",
+    response_model=list[InventoryLogResponse],
+)
+def get_inventory_logs(
+    current_user: User = Depends(require_role(UserRole.MANAGER)),
+    db: Session = Depends(get_db),
+):
+    service = ProductService(db)
+    return service.get_inventory_logs()
 
 
 @router.get(
@@ -68,7 +81,7 @@ def update_product(
     db: Session = Depends(get_db),
 ):
     service = ProductService(db)
-    return service.update_product(product_id, data)
+    return service.update_product(product_id, data, user_id=current_user.id)
 
 
 @router.delete(

@@ -16,6 +16,7 @@ from app.schemas.auth import (
     MessageResponse,
     UserResponse,
 )
+from app.services.audit import AuditService
 from app.services.auth import AuthService
 
 router = APIRouter(
@@ -70,6 +71,18 @@ def login(
         **cookie_options,
     )
 
+    AuditService.log_event(
+        db=db,
+        event_type="AUTH_LOGIN_SUCCESS",
+        resource_type="user",
+        resource_id=user.id,
+        actor=user,
+        action="LOGIN",
+        ip_address=client_ip,
+        payload={"email": user.email, "role": user.role},
+    )
+    db.commit()
+
     return LoginResponse(
         message="Login successful",
         user=UserResponse.model_validate(user),
@@ -87,9 +100,23 @@ def logout(
     db: Session = Depends(get_db),
 ):
     token = get_token_from_request(request)
+    client_ip = request.client.host if request.client else "unknown"
     if token:
         auth_service = AuthService(db)
+        actor = auth_service.get_user_by_session_token(token)
         auth_service.revoke_session(token)
+
+        if actor:
+            AuditService.log_event(
+                db=db,
+                event_type="AUTH_LOGOUT",
+                resource_type="user",
+                resource_id=actor.id,
+                actor=actor,
+                action="LOGOUT",
+                ip_address=client_ip,
+            )
+            db.commit()
 
     # Clear HttpOnly cookie on client
     response.delete_cookie(
