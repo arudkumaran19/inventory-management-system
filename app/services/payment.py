@@ -9,6 +9,8 @@ from app.models.order import Order, OrderStatus
 from app.models.payment import PaymentStatus
 from app.models.reservation import ReservationStatus
 from app.repositories.payment import PaymentRepository
+from app.services.audit import AuditService
+from app.services.ingredient import IngredientService
 from app.services.reservation import ReservationService
 
 
@@ -28,6 +30,10 @@ class PaymentService:
             order_id: int,
             idempotency_key: str,
             outcome: PaymentOutcome,
+            method: str = "card",
+            amount_tendered = None,
+            change_due = None,
+            reference_id: str | None = None,
     ):
         order = self.db.scalars(
             select(Order)
@@ -116,6 +122,10 @@ class PaymentService:
         payment = self.repository.create(
             order_id=order.id,
             idempotency_key=idempotency_key,
+            method=method,
+            amount_tendered=amount_tendered,
+            change_due=change_due,
+            reference_id=reference_id,
         )
 
         finalized_at = datetime.now(timezone.utc)
@@ -127,6 +137,26 @@ class PaymentService:
             order.completed_at = finalized_at
             reservation.status = ReservationStatus.CONSUMED.value
 
+            # Real-world P3 Recipe BOM deduction
+            IngredientService.deduct_order_ingredients(self.db, order, order.user)
+
+            # Immutable Cryptographic Audit Log
+            AuditService.log_event(
+                db=self.db,
+                event_type="PAYMENT_COMPLETED",
+                resource_type="payment",
+                resource_id=payment.id,
+                actor=order.user,
+                action="EXECUTE",
+                payload={
+                    "order_id": order.id,
+                    "method": payment.method,
+                    "amount_tendered": str(payment.amount_tendered) if payment.amount_tendered else None,
+                    "change_due": str(payment.change_due) if payment.change_due else None,
+                    "reference_id": payment.reference_id,
+                },
+            )
+
             self.db.commit()
             self.db.refresh(payment)
 
@@ -136,6 +166,16 @@ class PaymentService:
             payment.status = PaymentStatus.FAILED.value
             payment.processed_at = finalized_at
             order.completed_at = finalized_at
+
+            AuditService.log_event(
+                db=self.db,
+                event_type="PAYMENT_FAILED",
+                resource_type="payment",
+                resource_id=payment.id,
+                actor=order.user,
+                action="EXECUTE",
+                payload={"order_id": order.id, "reason": "Declined"},
+            )
 
         elif outcome == PaymentOutcome.TIMEOUT:
             payment.status = PaymentStatus.TIMED_OUT.value

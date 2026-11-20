@@ -32,10 +32,18 @@ class PaymentRepository:
             self,
             order_id: int,
             idempotency_key: str,
+            method: str = "card",
+            amount_tendered = None,
+            change_due = None,
+            reference_id: str | None = None,
     ) -> Payment:
         payment = Payment(
             order_id=order_id,
             idempotency_key=idempotency_key,
+            method=method,
+            amount_tendered=amount_tendered,
+            change_due=change_due,
+            reference_id=reference_id,
         )
 
         self.db.add(payment)

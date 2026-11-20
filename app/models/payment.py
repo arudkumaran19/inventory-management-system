@@ -1,7 +1,8 @@
 from datetime import datetime, timezone
+from decimal import Decimal
 from enum import Enum
 
-from sqlalchemy import CheckConstraint, ForeignKey, String
+from sqlalchemy import CheckConstraint, ForeignKey, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -13,6 +14,11 @@ class PaymentStatus(str, Enum):
     FAILED = "Failed"
     TIMED_OUT = "TimedOut"
     REFUNDED = "Refunded"
+
+
+class PaymentMethod(str, Enum):
+    CARD = "card"
+    CASH = "cash"
 
 
 class Payment(Base):
@@ -43,6 +49,30 @@ class Payment(Base):
         String(20),
         nullable=False,
         default=PaymentStatus.PENDING.value,
+    )
+
+    method: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default=PaymentMethod.CARD.value,
+    )
+
+    amount_tendered: Mapped[Decimal | None] = mapped_column(
+        Numeric(10, 2),
+        nullable=True,
+        default=None,
+    )
+
+    change_due: Mapped[Decimal | None] = mapped_column(
+        Numeric(10, 2),
+        nullable=True,
+        default=None,
+    )
+
+    reference_id: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+        default=None,
     )
 
     processed_at: Mapped[datetime | None] = mapped_column(

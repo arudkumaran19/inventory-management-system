@@ -30,4 +30,8 @@ def process_payment(
         order_id=order_id,
         idempotency_key=data.idempotency_key,
         outcome=data.outcome,
+        method=data.method,
+        amount_tendered=data.amount_tendered,
+        change_due=data.change_due,
+        reference_id=data.reference_id,
     )
