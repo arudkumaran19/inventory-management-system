@@ -6,8 +6,10 @@ import {
     ClipboardList,
     Clock3,
     DollarSign,
+    Download,
     Loader2,
     Package,
+    Printer,
     RefreshCw,
     Search,
     User,
@@ -16,10 +18,12 @@ import {
 
 import {
     cancelOrder,
+    getOrderExportCsvUrl,
     getOrders,
     type HandledBy,
     type Order,
 } from "../../lib/api"
+import { ReceiptModal } from "./ReceiptModal"
 
 type OrderHistoryProps = {
     onInventoryRefresh?: () => void
@@ -133,6 +137,8 @@ export function OrderHistory({
         useState<string | null>(null)
     const [confirmCancelId, setConfirmCancelId] =
         useState<number | null>(null)
+    const [receiptModalOrder, setReceiptModalOrder] = useState<Order | null>(null)
+    const [showReceiptModal, setShowReceiptModal] = useState(false)
 
     const loadOrders = async (isRefresh = false) => {
         try {
@@ -313,19 +319,29 @@ export function OrderHistory({
                         </p>
                     </div>
 
-                    <button
-                        type="button"
-                        onClick={() => void loadOrders(true)}
-                        disabled={refreshing}
-                        className="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-[#E8E3DB] bg-white px-3.5 text-xs font-bold text-[#1C1917] shadow-2xs hover:bg-[#FAF8F5] disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 transition-all"
-                    >
-                        <RefreshCw
-                            className={`size-3.5 ${
-                                refreshing ? "animate-spin text-[#78350F]" : ""
-                            }`}
-                        />
-                        Refresh
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <a
+                            href={getOrderExportCsvUrl()}
+                            download="artisan_cafe_orders.csv"
+                            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-[#E8E3DB] bg-white px-3.5 text-xs font-bold text-[#78350F] shadow-2xs hover:bg-[#FEF8EC] active:scale-95 transition-all"
+                        >
+                            <Download className="size-3.5" />
+                            Export CSV
+                        </a>
+                        <button
+                            type="button"
+                            onClick={() => void loadOrders(true)}
+                            disabled={refreshing}
+                            className="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-[#E8E3DB] bg-white px-3.5 text-xs font-bold text-[#1C1917] shadow-2xs hover:bg-[#FAF8F5] disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 transition-all"
+                        >
+                            <RefreshCw
+                                className={`size-3.5 ${
+                                    refreshing ? "animate-spin text-[#78350F]" : ""
+                                }`}
+                            />
+                            Refresh
+                        </button>
+                    </div>
                 </div>
 
                 {/* KPI Metrics Banner */}
@@ -628,20 +644,65 @@ export function OrderHistory({
                                         </div>
                                     </div>
 
-                                    {/* Total */}
-                                    <div className="mt-4 border-t border-[#E8E3DB] pt-3">
+                                    {/* Total & Payment details */}
+                                    <div className="mt-4 border-t border-[#E8E3DB] pt-3 space-y-1.5">
+                                        {Number(selectedOrder.discount_amount || 0) > 0 && (
+                                            <div className="flex items-center justify-between text-xs text-[#8C4E08] font-medium">
+                                                <span>Discount ({selectedOrder.discount_percent}% · {selectedOrder.discount_reason}):</span>
+                                                <span className="font-bold">-${Number(selectedOrder.discount_amount).toFixed(2)}</span>
+                                            </div>
+                                        )}
                                         <div className="flex items-center justify-between">
                                             <span className="font-serif-brand text-xs font-bold text-[#57534E] uppercase">
                                                 Total
                                             </span>
                                             <span className="tnum text-xl font-extrabold text-[#1C1917]">
-                                                {formatCurrency(getOrderTotal(selectedOrder))}
+                                                {formatCurrency(Math.max(0, getOrderTotal(selectedOrder) - Number(selectedOrder.discount_amount || 0)))}
                                             </span>
                                         </div>
+                                        {selectedOrder.payment && (
+                                            <div className="rounded-xl bg-[#FAF8F5] p-2.5 text-[11px] text-[#78716C] border border-[#E8E3DB] space-y-1">
+                                                <div className="flex justify-between font-semibold text-[#1C1917]">
+                                                    <span>Payment Tender:</span>
+                                                    <span className="uppercase">{selectedOrder.payment.method}</span>
+                                                </div>
+                                                {selectedOrder.payment.amount_tendered && (
+                                                    <div className="flex justify-between">
+                                                        <span>Cash Tendered:</span>
+                                                        <span>${Number(selectedOrder.payment.amount_tendered).toFixed(2)}</span>
+                                                    </div>
+                                                )}
+                                                {selectedOrder.payment.change_due && (
+                                                    <div className="flex justify-between text-[#215A36] font-bold">
+                                                        <span>Change Given:</span>
+                                                        <span>${Number(selectedOrder.payment.change_due).toFixed(2)}</span>
+                                                    </div>
+                                                )}
+                                                {selectedOrder.payment.reference_id && (
+                                                    <div className="flex justify-between">
+                                                        <span>Ref ID:</span>
+                                                        <span>{selectedOrder.payment.reference_id}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
 
-                                    {/* Action Buttons for Cancellable Orders */}
-                                    {["Reserved", "Paid"].includes(selectedOrder.status) && (
+                                    {/* Action Buttons: Print Receipt & Cancel */}
+                                    <div className="mt-4 space-y-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setReceiptModalOrder(selectedOrder)
+                                                setShowReceiptModal(true)
+                                            }}
+                                            className="flex h-9.5 w-full items-center justify-center gap-2 rounded-xl border border-[#78350F] bg-white px-3 text-xs font-bold text-[#78350F] hover:bg-[#FEF8EC] active:scale-95 transition-all shadow-2xs"
+                                        >
+                                            <Printer className="size-4" />
+                                            Print Receipt
+                                        </button>
+
+                                        {["Reserved", "Paid"].includes(selectedOrder.status) && (
                                         <div className="mt-5 space-y-2 border-t border-[#E8E3DB] pt-4">
                                             {confirmCancelId === selectedOrder.id ? (
                                                 <div className="rounded-xl border border-[#F8C8C8] bg-[#FDF2F2] p-3 text-center space-y-2.5">
@@ -681,12 +742,19 @@ export function OrderHistory({
                                             )}
                                         </div>
                                     )}
+                                    </div>
                                 </>
                             )}
                         </aside>
                     </div>
                 )}
             </div>
+
+            <ReceiptModal
+                order={receiptModalOrder}
+                isOpen={showReceiptModal}
+                onClose={() => setShowReceiptModal(false)}
+            />
 
             <Toast
                 message={cancelMessage}

@@ -12,12 +12,58 @@ class CartService:
         self.cart_repository = CartRepository(db)
         self.product_repository = ProductRepository(db)
 
-    def create_cart(self):
-        cart = self.cart_repository.create()
+    def create_cart(self, label: str | None = None):
+        cart = self.cart_repository.create(label=label)
 
         self.db.commit()
         self.db.refresh(cart)
 
+        return cart
+
+    def get_parked_carts(self):
+        return self.cart_repository.get_parked()
+
+    def park_cart(self, cart_id: int, label: str):
+        cart = self.get_cart(cart_id)
+        if cart.status != "Active":
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Cannot park cart with status {cart.status}",
+            )
+        if not cart.items:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot park an empty cart",
+            )
+        cart.status = "Parked"
+        cart.label = label.strip()
+        self.db.commit()
+        self.db.refresh(cart)
+        return cart
+
+    def resume_cart(self, cart_id: int):
+        cart = self.get_cart(cart_id)
+        if cart.status != "Parked":
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Cannot resume cart with status {cart.status}",
+            )
+        cart.status = "Active"
+        self.db.commit()
+        self.db.refresh(cart)
+        return cart
+
+    def apply_discount(self, cart_id: int, percent, reason: str | None = None):
+        cart = self.get_cart(cart_id)
+        if cart.status != "Active":
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Cart is not active",
+            )
+        cart.discount_percent = percent
+        cart.discount_reason = reason.strip() if reason else None
+        self.db.commit()
+        self.db.refresh(cart)
         return cart
 
     def get_cart(self, cart_id: int):
@@ -75,6 +121,8 @@ class CartService:
                 )
 
             existing_item.quantity = new_quantity
+            if data.notes is not None:
+                existing_item.notes = data.notes
         else:
             if data.quantity > product.available_stock:
                 raise HTTPException(
@@ -86,6 +134,7 @@ class CartService:
                 cart_id=cart_id,
                 product_id=data.product_id,
                 quantity=data.quantity,
+                notes=data.notes,
             )
 
         self.db.commit()

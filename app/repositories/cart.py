@@ -20,13 +20,24 @@ class CartRepository:
 
         return self.db.scalars(statement).first()
 
-    def create(self) -> Cart:
-        cart = Cart()
+    def create(self, label: str | None = None) -> Cart:
+        cart = Cart(label=label)
 
         self.db.add(cart)
         self.db.flush()
 
         return cart
+
+    def get_parked(self) -> list[Cart]:
+        statement = (
+            select(Cart)
+            .where(Cart.status == "Parked")
+            .order_by(Cart.id.desc())
+            .options(
+                selectinload(Cart.items),
+            )
+        )
+        return list(self.db.scalars(statement).all())
 
     def get_item(
             self,
@@ -45,11 +56,13 @@ class CartRepository:
             cart_id: int,
             product_id: int,
             quantity: int,
+            notes: str | None = None,
     ) -> CartItem:
         item = CartItem(
             cart_id=cart_id,
             product_id=product_id,
             quantity=quantity,
+            notes=notes,
         )
 
         self.db.add(item)

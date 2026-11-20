@@ -3,6 +3,7 @@ from decimal import Decimal
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, model_validator
+from app.schemas.payment import PaymentResponse
 
 
 class OrderItemResponse(BaseModel):
@@ -10,6 +11,7 @@ class OrderItemResponse(BaseModel):
     product_name: str
     quantity: int
     unit_price: Decimal
+    notes: Optional[str] = None
 
     model_config = ConfigDict(
         from_attributes=True,
@@ -40,6 +42,11 @@ class OrderResponse(BaseModel):
     items: list[OrderItemResponse]
     created_at: datetime
     completed_at: Optional[datetime] = None
+    discount_percent: Decimal = Decimal("0.00")
+    discount_amount: Decimal = Decimal("0.00")
+    discount_reason: Optional[str] = None
+    table_or_customer: Optional[str] = None
+    payment: Optional[PaymentResponse] = None
     # None means a legacy/pre-authentication order — never attribute to viewer.
     handled_by: Optional[HandledByResponse] = None
 

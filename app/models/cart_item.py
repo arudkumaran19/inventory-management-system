@@ -1,4 +1,4 @@
-from sqlalchemy import CheckConstraint, ForeignKey, UniqueConstraint
+from sqlalchemy import CheckConstraint, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column,relationship
 
 from app.db.base import Base
@@ -33,6 +33,12 @@ class CartItem(Base):
 
     quantity: Mapped[int] = mapped_column(
         nullable=False,
+    )
+
+    notes: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+        default=None,
     )
 
     cart: Mapped["Cart"] = relationship(

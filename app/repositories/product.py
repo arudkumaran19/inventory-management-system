@@ -24,11 +24,13 @@ class ProductRepository:
             name: str,
             price,
             available_stock: int,
+            category: str = "Coffee",
     ) -> Product:
         product = Product(
             name=name,
             price=price,
             available_stock=available_stock,
+            category=category,
         )
 
         self.db.add(product)

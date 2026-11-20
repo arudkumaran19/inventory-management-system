@@ -50,6 +50,12 @@ class OrderItem(Base):
         Numeric(12, 2),
         nullable=False,
     )
+
+    notes: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+        default=None,
+    )
     order: Mapped["Order"] = relationship(
         back_populates="items",
     )

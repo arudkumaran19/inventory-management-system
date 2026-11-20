@@ -71,6 +71,7 @@ class OrderRepository:
             quantity: int,
             unit_price,
             product_name: str,
+            notes: str | None = None,
     ) -> OrderItem:
         item = OrderItem(
             order_id=order_id,
@@ -78,6 +79,7 @@ class OrderRepository:
             product_name=product_name,
             quantity=quantity,
             unit_price=unit_price,
+            notes=notes,
         )
 
         self.db.add(item)

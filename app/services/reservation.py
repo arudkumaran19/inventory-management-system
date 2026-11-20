@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session, selectinload
 from app.models.order import Order, OrderStatus
 from app.models.reservation import Reservation, ReservationStatus
 from app.repositories.inventory import InventoryRepository
+from app.services.audit import AuditService
 
 
 class ReservationService:
@@ -85,6 +86,15 @@ class ReservationService:
             OrderStatus.EXPIRED.value
             if expired
             else OrderStatus.FAILED.value
+        )
+
+        AuditService.log_event(
+            db=self.db,
+            event_type="RESERVATION_EXPIRED" if expired else "RESERVATION_RELEASED",
+            resource_type="order",
+            resource_id=order.id,
+            action="EXECUTE",
+            payload={"order_id": order.id, "expired": expired},
         )
 
         self.db.commit()

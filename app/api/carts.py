@@ -6,8 +6,10 @@ from app.db.session import get_db
 from app.models.user import User
 from app.schemas.cart import (
     CartCreate,
+    CartDiscountRequest,
     CartItemCreate,
     CartItemUpdate,
+    CartParkRequest,
     CartResponse,
 )
 from app.schemas.order import CheckoutResponse
@@ -27,12 +29,66 @@ router = APIRouter(
     status_code=status.HTTP_201_CREATED,
 )
 def create_cart(
-    data: CartCreate,
+    data: CartCreate | None = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     service = CartService(db)
-    return service.create_cart()
+    label = data.label if data else None
+    return service.create_cart(label=label)
+
+
+@router.get(
+    "/parked",
+    response_model=list[CartResponse],
+)
+def get_parked_carts(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    service = CartService(db)
+    return service.get_parked_carts()
+
+
+@router.post(
+    "/{cart_id}/park",
+    response_model=CartResponse,
+)
+def park_cart(
+    cart_id: int,
+    data: CartParkRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    service = CartService(db)
+    return service.park_cart(cart_id, data.label)
+
+
+@router.post(
+    "/{cart_id}/resume",
+    response_model=CartResponse,
+)
+def resume_cart(
+    cart_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    service = CartService(db)
+    return service.resume_cart(cart_id)
+
+
+@router.post(
+    "/{cart_id}/discount",
+    response_model=CartResponse,
+)
+def apply_cart_discount(
+    cart_id: int,
+    data: CartDiscountRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    service = CartService(db)
+    return service.apply_discount(cart_id, data.discount_percent, data.discount_reason)
 
 
 @router.post(
