@@ -72,10 +72,10 @@ export function ProductCard({
                             ].join(" ")}
                         />
                         {isOutOfStock
-                            ? "Sold out"
+                            ? "Out of stock"
                             : isLowStock
                                 ? `${stock} left`
-                                : `${stock} in stock`}
+                                : `${stock} available`}
                     </span>
                 </div>
             </div>
@@ -96,7 +96,7 @@ export function ProductCard({
                     <button
                         type="button"
                         disabled={isOutOfStock}
-                        aria-label={`Add ${name} to register ticket`}
+                        aria-label={`Add ${name} to order`}
                         onClick={(e) => {
                             e.stopPropagation()
                             if (!isOutOfStock) {

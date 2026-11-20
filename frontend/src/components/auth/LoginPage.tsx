@@ -79,14 +79,14 @@ export function LoginPage() {
                             </span>
                         </div>
                         <p className="mt-1.5 text-xs font-medium text-[#78716C]">
-                            Handcrafted Coffee Roasters · Register Terminal Sign-In
+                            Sign in to begin your shift
                         </p>
                     </div>
 
                     {/* Quick-fill helper badges */}
                     <div className="mt-5 rounded-2xl border border-[#E8E3DB] bg-[#FAF8F5] p-3 text-center">
                         <p className="text-[11px] font-semibold text-[#78716C]">
-                            Quick Operator Sign-In:
+                            Demo Accounts:
                         </p>
                         <div className="mt-2 flex items-center justify-center gap-2">
                             <button
@@ -123,7 +123,7 @@ export function LoginPage() {
                     <form onSubmit={handleSubmit} className="mt-5 space-y-4">
                         <div>
                             <label className="block text-xs font-semibold text-[#292524] mb-1.5">
-                                Operator Email
+                                Email
                             </label>
                             <div className="relative">
                                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-[#A8A29E]">
@@ -137,7 +137,7 @@ export function LoginPage() {
                                         setEmail(e.target.value)
                                         if (activeError) setLocalError(null)
                                     }}
-                                    placeholder="operator@example.com"
+                                    placeholder="name@example.com"
                                     className="w-full rounded-xl border border-[#E8E3DB] bg-[#FAF8F5] py-2.5 pl-10 pr-4 text-sm text-[#1C1917] placeholder-[#A8A29E] transition-colors focus:border-[#78350F] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#78350F]/15"
                                 />
                             </div>
@@ -145,7 +145,7 @@ export function LoginPage() {
 
                         <div>
                             <label className="block text-xs font-semibold text-[#292524] mb-1.5">
-                                Terminal Passcode / Password
+                                Password
                             </label>
                             <div className="relative">
                                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-[#A8A29E]">
@@ -186,12 +186,12 @@ export function LoginPage() {
                             {isSubmitting ? (
                                 <>
                                     <div className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                                    <span>Verifying Session...</span>
+                                    <span>Signing in...</span>
                                 </>
                             ) : (
                                 <>
                                     <KeyRound className="size-4" />
-                                    <span>Sign in to Register</span>
+                                    <span>Sign In</span>
                                 </>
                             )}
                         </button>
@@ -200,7 +200,7 @@ export function LoginPage() {
                     {/* Security Footer Note */}
                     <div className="mt-7 border-t border-[#E8E3DB] pt-5 flex items-center justify-center gap-1.5 text-[11px] text-[#78716C]">
                         <CheckCircle2 className="size-3.5 text-[#4E6047]" />
-                        <span>HttpOnly Session · Role-Enforced RBAC · DB Revocation</span>
+                        <span>Secure session · Role-based access</span>
                     </div>
                 </div>
             </div>

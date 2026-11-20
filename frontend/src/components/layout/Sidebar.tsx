@@ -24,27 +24,27 @@ const navigation: {
     managerOnly?: boolean
 }[] = [
     {
-        label: "Register POS",
-        subtitle: "Orders & Express Checkout",
+        label: "POS",
+        subtitle: "Take orders & payments",
         page: "pos",
         icon: ShoppingCart,
     },
     {
-        label: "Order Ledger",
-        subtitle: "Audit & Settlement History",
+        label: "Sales History",
+        subtitle: "Past orders & receipts",
         page: "orders",
         icon: ClipboardList,
     },
     {
-        label: "Inventory",
-        subtitle: "Stock Levels & Pricing",
+        label: "Stock",
+        subtitle: "Products & availability",
         page: "inventory",
         icon: Package,
         managerOnly: true,
     },
     {
-        label: "Team & Staff",
-        subtitle: "Operators & Access Control",
+        label: "Staff",
+        subtitle: "Team accounts & roles",
         page: "users",
         icon: Users,
         managerOnly: true,
@@ -83,7 +83,7 @@ export function Sidebar({
                         </div>
 
                         <p className="text-[11px] font-medium text-[#78716C]">
-                            Register &amp; Operations
+                            Register &amp; Stock
                         </p>
                     </div>
                 </div>
@@ -103,7 +103,7 @@ export function Sidebar({
             {/* Navigation Section */}
             <div className="px-4 pt-5 pb-2">
                 <p className="text-[10px] font-bold tracking-wider text-[#A8A29E] uppercase">
-                    Terminal Navigation
+                    Navigation
                 </p>
             </div>
 
@@ -165,7 +165,7 @@ export function Sidebar({
                                 <span className="absolute inline-flex size-full animate-ping rounded-full bg-[#4E6047] opacity-75" />
                                 <span className="relative inline-flex size-2 rounded-full bg-[#4E6047]" />
                             </span>
-                            Register Online
+                            POS Online
                         </div>
                         <span className="rounded-full bg-[#EDF6EE] px-2 py-0.5 text-[10px] font-bold text-[#215A36] border border-[#C8E3CE]">
                             Active
@@ -174,10 +174,10 @@ export function Sidebar({
 
                     <div className="mt-2.5 flex items-center justify-between text-[11px] text-[#78716C] pt-2 border-t border-[#E8E3DB]/60">
                         <span className="truncate max-w-[130px] font-medium text-[#1C1917]">
-                            {user ? user.display_name : "Terminal 01"}
+                            {user ? user.display_name : "POS Station"}
                         </span>
                         <span className="rounded bg-[#F5F1EA] px-1.5 py-0.5 text-[10px] font-bold text-[#57534E] capitalize">
-                            {user ? user.role : "Operator"}
+                            {user ? user.role : "Staff"}
                         </span>
                     </div>
                 </div>

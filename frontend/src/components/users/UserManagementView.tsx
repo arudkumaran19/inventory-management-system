@@ -72,7 +72,7 @@ export function UserManagementView() {
             const data = await getUsers()
             setUsers(data)
         } catch (err) {
-            const msg = err instanceof Error ? err.message : "Failed to load team operators."
+            const msg = err instanceof Error ? err.message : "Failed to load staff."
             setError(msg)
         } finally {
             setLoading(false)
@@ -91,7 +91,7 @@ export function UserManagementView() {
             })
             .catch((err) => {
                 if (!ignore) {
-                    const msg = err instanceof Error ? err.message : "Failed to load team operators."
+                    const msg = err instanceof Error ? err.message : "Failed to load staff."
                     setError(msg)
                     setLoading(false)
                 }
@@ -171,9 +171,9 @@ export function UserManagementView() {
             setUsers((prev) => [...prev, newUser])
             setIsAddModalOpen(false)
             setToastVariant("success")
-            setToastMessage(`Operator "${newUser.display_name}" created successfully.`)
+            setToastMessage(`Staff member "${newUser.display_name}" added.`)
         } catch (err) {
-            const msg = err instanceof Error ? err.message : "Failed to create operator."
+            const msg = err instanceof Error ? err.message : "Failed to add staff member."
             setModalError(msg)
         } finally {
             setIsSubmitting(false)
@@ -206,9 +206,9 @@ export function UserManagementView() {
             setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)))
             setIsEditModalOpen(false)
             setToastVariant("success")
-            setToastMessage(`Operator "${updated.display_name}" updated successfully.`)
+            setToastMessage(`Staff member "${updated.display_name}" updated.`)
         } catch (err) {
-            const msg = err instanceof Error ? err.message : "Failed to update operator."
+            const msg = err instanceof Error ? err.message : "Failed to update staff member."
             setModalError(msg)
         } finally {
             setIsSubmitting(false)
@@ -229,11 +229,11 @@ export function UserManagementView() {
             setToastVariant("success")
             setToastMessage(
                 newStatus
-                    ? `Operator "${target.display_name}" activated.`
-                    : `Operator "${target.display_name}" suspended. Active sessions terminated.`,
+                    ? `Staff member "${target.display_name}" activated.`
+                    : `Staff member "${target.display_name}" deactivated.`,
             )
         } catch (err) {
-            const msg = err instanceof Error ? err.message : "Failed to toggle operator status."
+            const msg = err instanceof Error ? err.message : "Failed to change account status."
             setToastVariant("error")
             setToastMessage(msg)
         }
@@ -252,9 +252,9 @@ export function UserManagementView() {
             await deleteUser(userToDelete.id)
             setUsers((prev) => prev.filter((u) => u.id !== userToDelete.id))
             setToastVariant("success")
-            setToastMessage(`Operator "${userToDelete.display_name}" permanently deleted.`)
+            setToastMessage(`Staff member "${userToDelete.display_name}" deleted.`)
         } catch (err) {
-            const msg = err instanceof Error ? err.message : "Failed to delete operator."
+            const msg = err instanceof Error ? err.message : "Failed to delete staff member."
             setToastVariant("error")
             setToastMessage(msg)
         } finally {
@@ -281,10 +281,10 @@ export function UserManagementView() {
                         </div>
                         <div>
                             <h1 className="font-serif-brand text-2xl font-medium tracking-tight text-[#1C1917]">
-                                Team & Operator Management
+                                Staff
                             </h1>
                             <p className="text-xs text-[#78716C] mt-0.5">
-                                Provision cashier & manager accounts, manage credentials, and control register privileges.
+                                Manage team accounts and register access.
                             </p>
                         </div>
                     </div>
@@ -308,7 +308,7 @@ export function UserManagementView() {
                         className="inline-flex items-center gap-2 rounded-xl bg-[#78350F] px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-[#5C2B09] transition-all cursor-pointer active:scale-98"
                     >
                         <UserPlus className="size-4 text-[#FDE68A]" />
-                        <span>Add Operator</span>
+                        <span>Add Staff Member</span>
                     </button>
                 </div>
             </div>
@@ -323,7 +323,7 @@ export function UserManagementView() {
                         </div>
                     </div>
                     <p className="mt-3 font-serif-brand text-3xl font-medium tracking-tight text-[#1C1917] tnum">{stats.total}</p>
-                    <p className="text-xs text-[#78716C] mt-1">Configured terminal operators</p>
+                    <p className="text-xs text-[#78716C] mt-1">Team accounts</p>
                 </div>
 
                 <div className="rounded-2xl border border-[#E8E3DB] bg-white p-5 shadow-xs transition hover:shadow-md hover:border-[#D6CEC4]">
@@ -334,7 +334,7 @@ export function UserManagementView() {
                         </div>
                     </div>
                     <p className="mt-3 font-serif-brand text-3xl font-medium tracking-tight text-[#78350F] tnum">{stats.managers}</p>
-                    <p className="text-xs text-[#78716C] mt-1">Catalog & user admin rights</p>
+                    <p className="text-xs text-[#78716C] mt-1">Menu &amp; staff admin</p>
                 </div>
 
                 <div className="rounded-2xl border border-[#E8E3DB] bg-white p-5 shadow-xs transition hover:shadow-md hover:border-[#D6CEC4]">
@@ -345,18 +345,18 @@ export function UserManagementView() {
                         </div>
                     </div>
                     <p className="mt-3 font-serif-brand text-3xl font-medium tracking-tight text-[#4E6047] tnum">{stats.cashiers}</p>
-                    <p className="text-xs text-[#78716C] mt-1">Register & order processing</p>
+                    <p className="text-xs text-[#78716C] mt-1">POS &amp; order checkout</p>
                 </div>
 
                 <div className="rounded-2xl border border-[#E8E3DB] bg-white p-5 shadow-xs transition hover:shadow-md hover:border-[#D6CEC4]">
                     <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-semibold text-[#78716C] uppercase tracking-wider">Suspended</span>
+                        <span className="text-[11px] font-semibold text-[#78716C] uppercase tracking-wider">Deactivated</span>
                         <div className="flex size-8 items-center justify-center rounded-lg bg-rose-50 text-rose-700 border border-rose-200">
                             <UserX className="size-4" />
                         </div>
                     </div>
                     <p className="mt-3 font-serif-brand text-3xl font-medium tracking-tight text-[#1C1917] tnum">{stats.inactive}</p>
-                    <p className="text-xs text-[#78716C] mt-1">Revoked access accounts</p>
+                    <p className="text-xs text-[#78716C] mt-1">Inactive accounts</p>
                 </div>
             </div>
 
@@ -368,7 +368,7 @@ export function UserManagementView() {
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search by name or email..."
+                        placeholder="Search staff..."
                         className="w-full rounded-xl border border-[#E8E3DB] bg-[#FAF8F5]/60 py-2 pl-9 pr-3 text-xs text-[#1C1917] placeholder:text-[#A8A29E] focus:bg-white focus:border-[#78350F] focus:outline-none focus:ring-1 focus:ring-[#78350F]"
                     />
                 </div>
@@ -380,7 +380,7 @@ export function UserManagementView() {
                             { id: "manager", label: "Managers" },
                             { id: "cashier", label: "Cashiers" },
                             { id: "active", label: "Active" },
-                            { id: "inactive", label: "Suspended" },
+                            { id: "inactive", label: "Deactivated" },
                         ] as const
                     ).map((btn) => (
                         <button
@@ -404,7 +404,7 @@ export function UserManagementView() {
                 {loading ? (
                     <div className="flex flex-col items-center justify-center py-16 text-[#78716C] gap-2">
                         <RefreshCw className="size-6 animate-spin text-[#78350F]" />
-                        <span className="text-xs font-medium">Loading operators...</span>
+                        <span className="text-xs font-medium">Loading staff...</span>
                     </div>
                 ) : error ? (
                     <div className="p-8 text-center">
@@ -421,9 +421,9 @@ export function UserManagementView() {
                 ) : filteredUsers.length === 0 ? (
                     <div className="py-16 text-center text-[#78716C]">
                         <Users className="mx-auto size-8 text-[#A8A29E]" />
-                        <p className="mt-2 font-serif-brand text-base font-medium text-[#1C1917]">No operators found</p>
+                        <p className="mt-2 font-serif-brand text-base font-medium text-[#1C1917]">No staff found</p>
                         <p className="mt-0.5 text-xs text-[#78716C]">
-                            {searchQuery ? "Try refining your search filter." : "Click 'Add Operator' to provision an account."}
+                            {searchQuery ? "Try refining your search filter." : "Click 'Add Staff Member' to create an account."}
                         </p>
                     </div>
                 ) : (
@@ -431,11 +431,11 @@ export function UserManagementView() {
                         <table className="w-full text-left text-xs min-w-[700px]">
                             <thead className="border-b border-[#E8E3DB] bg-[#F8F5EE] text-[11px] font-semibold text-[#78716C] uppercase tracking-wider">
                                 <tr>
-                                    <th className="py-3.5 pl-5 pr-3">Operator</th>
+                                    <th className="py-3.5 pl-5 pr-3">Staff Member</th>
                                     <th className="px-3 py-3.5">Email</th>
                                     <th className="px-3 py-3.5">Role</th>
                                     <th className="px-3 py-3.5">Status</th>
-                                    <th className="px-3 py-3.5">Created</th>
+                                    <th className="px-3 py-3.5">Added</th>
                                     <th className="py-3.5 pl-3 pr-5 text-right">Actions</th>
                                 </tr>
                             </thead>
@@ -465,7 +465,7 @@ export function UserManagementView() {
                                                                 : "bg-[#EDF6EE] text-[#4E6047] border border-[#CFDFCF]"
                                                         }`}
                                                     >
-                                                        {initials || "OP"}
+                                                        {initials || "ST"}
                                                     </div>
                                                     <div>
                                                         <div className="flex items-center gap-1.5">
@@ -507,7 +507,7 @@ export function UserManagementView() {
                                                 ) : (
                                                     <span className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700">
                                                         <UserX className="size-3 text-rose-600" />
-                                                        Suspended
+                                                        Deactivated
                                                     </span>
                                                 )}
                                             </td>
@@ -527,10 +527,10 @@ export function UserManagementView() {
                                                         onClick={() => handleToggleActive(u)}
                                                         title={
                                                             isSelf
-                                                                ? "Cannot suspend your own account"
+                                                                ? "Cannot deactivate your own account"
                                                                 : u.is_active
-                                                                ? "Suspend operator"
-                                                                : "Activate operator"
+                                                                ? "Deactivate account"
+                                                                : "Activate account"
                                                         }
                                                         className={`rounded-lg p-1.5 transition-colors cursor-pointer ${
                                                             isSelf
@@ -551,7 +551,7 @@ export function UserManagementView() {
                                                     <button
                                                         type="button"
                                                         onClick={() => openEditModal(u)}
-                                                        title="Edit operator"
+                                                        title="Edit staff member"
                                                         className="rounded-lg p-1.5 text-[#78716C] transition-colors hover:bg-[#FAF8F5] hover:text-[#78350F] cursor-pointer"
                                                     >
                                                         <Edit3 className="size-3.5" />
@@ -565,7 +565,7 @@ export function UserManagementView() {
                                                         title={
                                                             isSelf
                                                                 ? "Cannot delete your own account"
-                                                                : "Delete operator"
+                                                                : "Delete staff member"
                                                         }
                                                         className={`rounded-lg p-1.5 transition-colors cursor-pointer ${
                                                             isSelf
@@ -595,7 +595,7 @@ export function UserManagementView() {
                                 <div className="flex size-9 items-center justify-center rounded-xl bg-[#FEF8EC] text-[#78350F] border border-[#F2DEBA]">
                                     <UserPlus className="size-4" />
                                 </div>
-                                <h2 className="font-serif-brand text-base font-bold text-[#1C1917]">Add New Operator</h2>
+                                <h2 className="font-serif-brand text-base font-bold text-[#1C1917]">Add Staff Member</h2>
                             </div>
                             <button
                                 type="button"
@@ -616,7 +616,7 @@ export function UserManagementView() {
                         <form onSubmit={handleCreateUser} className="mt-4 space-y-4 text-xs">
                             <div>
                                 <label className="block font-semibold text-[#1C1917] mb-1">
-                                    Operator Display Name *
+                                    Full Name *
                                 </label>
                                 <input
                                     type="text"
@@ -630,7 +630,7 @@ export function UserManagementView() {
 
                             <div>
                                 <label className="block font-semibold text-[#1C1917] mb-1">
-                                    Email Address *
+                                    Email *
                                 </label>
                                 <input
                                     type="email"
@@ -644,7 +644,7 @@ export function UserManagementView() {
 
                             <div>
                                 <label className="block font-semibold text-[#1C1917] mb-1">
-                                    Operator Role *
+                                    Role *
                                 </label>
                                 <div className="grid grid-cols-2 gap-2">
                                     <button
@@ -661,7 +661,7 @@ export function UserManagementView() {
                                             <span>Cashier</span>
                                         </div>
                                         <span className="mt-1 text-[10px] text-[#78716C] leading-tight">
-                                            Register, Cart, Orders & Payments
+                                            POS, orders &amp; payments
                                         </span>
                                     </button>
 
@@ -679,7 +679,7 @@ export function UserManagementView() {
                                             <span>Manager</span>
                                         </div>
                                         <span className="mt-1 text-[10px] text-[#78716C] leading-tight">
-                                            Catalog CRUD, Staff & Inventory
+                                            Menu, staff &amp; stock
                                         </span>
                                     </button>
                                 </div>
@@ -687,7 +687,7 @@ export function UserManagementView() {
 
                             <div>
                                 <label className="block font-semibold text-[#1C1917] mb-1">
-                                    Initial Password * (Minimum 12 Characters)
+                                    Password * (At least 12 characters)
                                 </label>
                                 <div className="relative">
                                     <input
@@ -709,7 +709,7 @@ export function UserManagementView() {
                                     </button>
                                 </div>
                                 <p className="mt-1 text-[10px] text-[#78716C]">
-                                    Enforces security standard: minimum 12 characters.
+                                    Must be at least 12 characters.
                                 </p>
                             </div>
 
@@ -729,12 +729,12 @@ export function UserManagementView() {
                                     {isSubmitting ? (
                                         <>
                                             <RefreshCw className="size-3.5 animate-spin" />
-                                            <span>Creating...</span>
+                                            <span>Adding...</span>
                                         </>
                                     ) : (
                                         <>
                                             <UserPlus className="size-3.5 text-[#FDE68A]" />
-                                            <span>Create Operator</span>
+                                            <span>Add Staff Member</span>
                                         </>
                                     )}
                                 </button>
@@ -754,7 +754,7 @@ export function UserManagementView() {
                                     <Edit3 className="size-4" />
                                 </div>
                                 <div>
-                                    <h2 className="font-serif-brand text-base font-bold text-[#1C1917]">Edit Operator</h2>
+                                    <h2 className="font-serif-brand text-base font-bold text-[#1C1917]">Edit Staff Member</h2>
                                     <p className="text-[11px] text-[#78716C] font-mono">{userToEdit.email}</p>
                                 </div>
                             </div>
@@ -777,7 +777,7 @@ export function UserManagementView() {
                         <form onSubmit={handleUpdateUser} className="mt-4 space-y-4 text-xs">
                             <div>
                                 <label className="block font-semibold text-[#1C1917] mb-1">
-                                    Operator Display Name
+                                    Full Name
                                 </label>
                                 <input
                                     type="text"
@@ -810,7 +810,7 @@ export function UserManagementView() {
                                             <span>Cashier</span>
                                         </div>
                                         <span className="mt-1 text-[10px] text-[#78716C] leading-tight">
-                                            Standard Register
+                                            POS, orders &amp; payments
                                         </span>
                                     </button>
 
@@ -831,7 +831,7 @@ export function UserManagementView() {
                                             <span>Manager</span>
                                         </div>
                                         <span className="mt-1 text-[10px] text-[#78716C] leading-tight">
-                                            Admin Privileges
+                                            Menu, staff &amp; stock
                                         </span>
                                     </button>
                                 </div>
@@ -855,12 +855,12 @@ export function UserManagementView() {
                                         />
                                         <div>
                                             <p className="font-semibold text-[#1C1917]">
-                                                {editFormData.is_active ? "Active Operator" : "Suspended"}
+                                                {editFormData.is_active ? "Active" : "Deactivated"}
                                             </p>
                                             <p className="text-[10px] text-[#78716C]">
                                                 {editFormData.is_active
-                                                    ? "Able to log in and operate POS"
-                                                    : "Access revoked; sessions terminated"}
+                                                    ? "Can sign in and use the POS"
+                                                    : "Sign in disabled"}
                                             </p>
                                         </div>
                                     </div>
@@ -881,7 +881,7 @@ export function UserManagementView() {
                                                 : "border border-[#CFDFCF] bg-[#EDF6EE] text-[#4E6047] hover:bg-[#DFEDDF]"
                                         }`}
                                     >
-                                        {editFormData.is_active ? "Suspend" : "Activate"}
+                                        {editFormData.is_active ? "Deactivate" : "Activate"}
                                     </button>
                                 </div>
                             </div>
@@ -948,15 +948,15 @@ export function UserManagementView() {
                                 <Trash2 className="size-5" />
                             </div>
                             <div>
-                                <h3 className="font-serif-brand text-sm font-bold text-[#1C1917]">Delete Operator Account?</h3>
+                                <h3 className="font-serif-brand text-sm font-bold text-[#1C1917]">Delete Staff Member?</h3>
                                 <p className="text-xs text-[#78716C]">This action cannot be undone.</p>
                             </div>
                         </div>
 
                         <p className="mt-4 text-xs text-[#78716C] leading-relaxed">
-                            Are you sure you want to permanently delete{" "}
+                            Are you sure you want to delete{" "}
                             <strong className="text-[#1C1917]">{userToDelete.display_name}</strong> (
-                            <span className="font-mono text-[#78716C]">{userToDelete.email}</span>)? Active sessions will be terminated immediately.
+                            <span className="font-mono text-[#78716C]">{userToDelete.email}</span>)?
                         </p>
 
                         <div className="mt-6 flex items-center justify-end gap-2 border-t border-[#E8E3DB] pt-4">
@@ -972,7 +972,7 @@ export function UserManagementView() {
                                 onClick={handleDeleteUser}
                                 className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-rose-700 cursor-pointer active:scale-98"
                             >
-                                Confirm Delete
+                                Delete
                             </button>
                         </div>
                     </div>

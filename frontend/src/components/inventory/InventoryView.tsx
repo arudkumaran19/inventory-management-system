@@ -35,7 +35,7 @@ const emptyForm: ProductForm = {
 
 function getStockLabel(stock: number) {
     if (stock === 0) return "Out of stock"
-    if (stock <= 5) return "Low stock"
+    if (stock <= 5) return "Running low"
     return "In stock"
 }
 
@@ -243,15 +243,15 @@ export function InventoryView() {
         const stock = Number(form.available_stock)
 
         if (!name) {
-            return "Product name is required."
+            return "Enter a product name."
         }
 
         if (!Number.isFinite(price) || price <= 0) {
-            return "Price must be greater than 0."
+            return "Enter a valid price above $0."
         }
 
         if (!Number.isInteger(stock) || stock < 0) {
-            return "Available stock must be a whole number of 0 or greater."
+            return "Enter a whole number for stock."
         }
 
         return null
@@ -285,13 +285,13 @@ export function InventoryView() {
                 await updateProduct(editingProduct.id, payload)
 
                 setSuccessMessage(
-                    `Product "${payload.name}" was updated successfully.`,
+                    `Product "${payload.name}" updated.`,
                 )
             } else {
                 await createProduct(payload)
 
                 setSuccessMessage(
-                    `Product "${payload.name}" was created successfully.`,
+                    `Product "${payload.name}" added.`,
                 )
             }
 
@@ -332,7 +332,7 @@ export function InventoryView() {
             )
 
             setSuccessMessage(
-                `Product "${product.name}" was deleted successfully.`,
+                `Product "${product.name}" deleted.`,
             )
         } catch (err) {
             setError(
@@ -351,8 +351,8 @@ export function InventoryView() {
 
         const confirmed = window.confirm(
             nextIsActive
-                ? `Restore "${product.name}"?\n\nThis will make the product available for sale again.`
-                : `Archive "${product.name}"?\n\nThis will remove the product from the POS catalog, but keep its history.`,
+                ? `Restore "${product.name}"?\n\nThis will make the product available on the menu again.`
+                : `Archive "${product.name}"?\n\nThis will hide the product from the menu, but keep its history.`,
         )
 
         if (!confirmed) return
@@ -379,8 +379,8 @@ export function InventoryView() {
 
             setSuccessMessage(
                 nextIsActive
-                    ? `Product "${product.name}" was restored successfully.`
-                    : `Product "${product.name}" was archived successfully.`,
+                    ? `Product "${product.name}" restored.`
+                    : `Product "${product.name}" archived.`,
             )
         } catch (err) {
             setError(
@@ -406,15 +406,15 @@ export function InventoryView() {
                             <div>
                                 <div className="flex items-center gap-2.5">
                                     <h1 className="font-serif-brand text-2xl font-medium tracking-tight text-[#1C1917]">
-                                        Inventory & Stock Control
+                                        Stock
                                     </h1>
                                     <span className="inline-flex items-center gap-1.5 rounded-full bg-[#EDF6EE] px-2.5 py-0.5 text-xs font-medium text-[#4E6047] border border-[#CFDFCF]">
                                         <span className="size-1.5 rounded-full bg-[#4E6047] animate-pulse" />
-                                        Live Sync (4s)
+                                        Updated live
                                     </span>
                                 </div>
                                 <p className="text-xs text-[#78716C] mt-0.5">
-                                    Real-time inventory levels, dynamic stock reservations, and catalog management.
+                                    Manage products, prices, and available quantities.
                                 </p>
                             </div>
                         </div>
@@ -464,14 +464,14 @@ export function InventoryView() {
                             <span className="text-xs text-[#A8A29E]">items</span>
                         </div>
                         <p className="mt-1 text-xs text-[#78716C]">
-                            Available in POS register catalog
+                            Available on the menu
                         </p>
                     </div>
 
                     {/* Archived Products */}
                     <div className="rounded-2xl border border-[#E8E3DB] bg-white p-5 shadow-xs transition hover:shadow-md hover:border-[#D6CEC4]">
                         <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-semibold text-[#78716C] uppercase tracking-wider">Archived Items</span>
+                            <span className="text-[11px] font-semibold text-[#78716C] uppercase tracking-wider">Archived</span>
                             <div className="flex size-8 items-center justify-center rounded-lg bg-[#F5F2EB] text-[#78716C] border border-[#E8E3DB]">
                                 <Archive className="size-4" />
                             </div>
@@ -483,14 +483,14 @@ export function InventoryView() {
                             <span className="text-xs text-[#A8A29E]">items</span>
                         </div>
                         <p className="mt-1 text-xs text-[#78716C]">
-                            Preserved for reporting & audit history
+                            Hidden from menu
                         </p>
                     </div>
 
                     {/* Total Active Units */}
                     <div className="rounded-2xl border border-[#E8E3DB] bg-white p-5 shadow-xs transition hover:shadow-md hover:border-[#D6CEC4]">
                         <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-semibold text-[#78716C] uppercase tracking-wider">Active Units</span>
+                            <span className="text-[11px] font-semibold text-[#78716C] uppercase tracking-wider">Total Quantity</span>
                             <div className="flex size-8 items-center justify-center rounded-lg bg-[#FEF8EC] text-[#78350F] border border-[#F2DEBA]">
                                 <Boxes className="size-4" />
                             </div>
@@ -499,17 +499,17 @@ export function InventoryView() {
                             <span className="font-serif-brand text-3xl font-medium tracking-tight text-[#1C1917] tnum">
                                 {activeStock}
                             </span>
-                            <span className="text-xs text-[#A8A29E]">units in shelf</span>
+                            <span className="text-xs text-[#A8A29E]">units</span>
                         </div>
                         <p className="mt-1 text-xs text-[#78716C]">
-                            Unreserved stock ready for sale
+                            Available for sale
                         </p>
                     </div>
 
                     {/* Stock Alerts */}
                     <div className="rounded-2xl border border-[#E8E3DB] bg-white p-5 shadow-xs transition hover:shadow-md hover:border-[#D6CEC4]">
                         <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-semibold text-[#78716C] uppercase tracking-wider">Stock Alerts</span>
+                            <span className="text-[11px] font-semibold text-[#78716C] uppercase tracking-wider">Running Low &amp; Out</span>
                             <div className={[
                                 "flex size-8 items-center justify-center rounded-lg border",
                                 lowStockCount + outOfStockCount > 0
@@ -523,10 +523,10 @@ export function InventoryView() {
                             <span className="font-serif-brand text-3xl font-medium tracking-tight text-[#1C1917] tnum">
                                 {lowStockCount + outOfStockCount}
                             </span>
-                            <span className="text-xs text-[#A8A29E]">attention required</span>
+                            <span className="text-xs text-[#A8A29E]">items</span>
                         </div>
                         <p className="mt-1 text-xs text-[#78716C]">
-                            {lowStockCount} low stock · {outOfStockCount} depleted
+                            {lowStockCount} running low · {outOfStockCount} out of stock
                         </p>
                     </div>
                 </div>
@@ -536,7 +536,7 @@ export function InventoryView() {
                     <div className="flex flex-col gap-3 border-b border-[#E8E3DB] p-4 sm:flex-row sm:items-center sm:justify-between bg-[#FAF8F5]/80">
                         <div className="flex items-center gap-3">
                             <span className="text-sm font-semibold text-[#1C1917]">
-                                Product Catalog
+                                Products
                             </span>
                             <span className="inline-flex items-center rounded-full bg-[#F5F2EB] px-2.5 py-0.5 text-xs font-medium text-[#78716C] border border-[#E8E3DB] tnum">
                                 {filteredProducts.length} of {products.length} products
@@ -610,10 +610,10 @@ export function InventoryView() {
                                     <RefreshCw className="size-6 animate-spin" />
                                 </div>
                                 <p className="mt-3 text-sm font-semibold text-[#1C1917]">
-                                    Synchronizing Inventory...
+                                    Loading stock...
                                 </p>
                                 <p className="mt-1 text-xs text-[#78716C]">
-                                    Fetching current product stock and reservation states
+                                    Fetching products and quantities...
                                 </p>
                             </div>
                         </div>
@@ -626,18 +626,18 @@ export function InventoryView() {
 
                                 <p className="mt-4 font-serif-brand text-lg font-medium text-[#1C1917]">
                                     {search || statusFilter !== "all"
-                                        ? "No matching products found"
-                                        : "No products in catalog"}
+                                        ? "No products found"
+                                        : "No products"}
                                 </p>
 
                                 <p className="mt-1 text-xs text-[#78716C] leading-relaxed">
                                     {search
                                         ? `No products matched "${search}". Try searching by another keyword or reset the filter.`
                                         : statusFilter === "archived"
-                                            ? "There are currently no archived products in the system."
+                                            ? "There are currently no archived products."
                                             : statusFilter === "active"
-                                                ? "There are no active products in the POS catalog."
-                                                : "Create your first product to start taking orders in the POS."}
+                                                ? "There are no active products on the menu."
+                                                : "Add your first product to start taking orders."}
                                 </p>
 
                                 {(search || statusFilter !== "all") ? (
@@ -659,7 +659,7 @@ export function InventoryView() {
                                         className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-[#78350F] px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#5C2B09] transition cursor-pointer"
                                     >
                                         <Plus className="size-3.5 text-[#FDE68A]" />
-                                        Add First Product
+                                        Add Product
                                     </button>
                                 )}
                             </div>
@@ -676,10 +676,10 @@ export function InventoryView() {
                                             Price
                                         </th>
                                         <th className="px-5 py-3.5">
-                                            Current Stock
+                                            Available Quantity
                                         </th>
                                         <th className="px-5 py-3.5">
-                                            Catalog Status
+                                            Status
                                         </th>
                                         <th className="px-5 py-3.5 text-right">
                                             Actions
@@ -738,7 +738,7 @@ export function InventoryView() {
                                                             ].join(" ")}>
                                                                 {product.available_stock}
                                                             </span>
-                                                            <span className="text-xs text-[#A8A29E]">units available</span>
+                                                            <span className="text-xs text-[#A8A29E]">in stock</span>
                                                         </div>
 
                                                         {/* Visual mini stock bar */}
@@ -878,12 +878,12 @@ export function InventoryView() {
                                     <h2 className="font-serif-brand text-base font-bold text-[#1C1917]">
                                         {editingProduct
                                             ? `Edit "${editingProduct.name}"`
-                                            : "Add New Product"}
+                                            : "Add Product"}
                                     </h2>
                                     <p className="text-xs text-[#78716C]">
                                         {editingProduct
-                                            ? "Update product details, pricing, and stock inventory."
-                                            : "Add a brand new item to the POS catalog."}
+                                            ? "Update product details, price, and stock."
+                                            : "Add an item to the menu."}
                                     </p>
                                 </div>
                             </div>
@@ -970,7 +970,7 @@ export function InventoryView() {
                                         htmlFor="product-stock"
                                         className="mb-1.5 block text-xs font-bold text-[#1C1917] uppercase tracking-wider"
                                     >
-                                        Available Units
+                                        Available Quantity
                                     </label>
                                     <input
                                         id="product-stock"
@@ -1012,7 +1012,7 @@ export function InventoryView() {
 
                                     {editingProduct
                                         ? "Save Changes"
-                                        : "Create Product"}
+                                        : "Add Product"}
                                 </button>
                             </div>
                         </form>

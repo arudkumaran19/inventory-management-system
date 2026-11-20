@@ -10,10 +10,10 @@ import { InventoryView } from "./components/inventory/InventoryView"
 import { UserManagementView } from "./components/users/UserManagementView"
 
 const pageTitles: Record<AppPage, string> = {
-    pos: "Register Terminal",
-    orders: "Order Ledger & Audit",
-    inventory: "Inventory & Catalog",
-    users: "Team & Permissions",
+    pos: "POS",
+    orders: "Sales History",
+    inventory: "Stock",
+    users: "Staff",
 }
 
 function AuthenticatedPOS() {
@@ -32,7 +32,7 @@ function AuthenticatedPOS() {
                             Artisan Café POS
                         </p>
                         <p className="mt-0.5 text-xs font-medium text-stone-500">
-                            Connecting register session...
+                            Loading POS...
                         </p>
                     </div>
                 </div>

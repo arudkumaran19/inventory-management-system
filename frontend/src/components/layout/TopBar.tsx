@@ -50,12 +50,12 @@ export function TopBar({
                 <div className="min-w-0">
                     <div className="flex items-center gap-2">
                         <span className="text-[11px] font-semibold text-[#78350F] tracking-wide uppercase">
-                            Artisan Roasters
+                            Artisan Café
                         </span>
                         <span className="text-[#D8D1C5]">•</span>
                         <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#78716C]">
                             <span className="size-1.5 rounded-full bg-[#4E6047]" />
-                            Terminal 01 Online
+                            POS Online
                         </span>
                     </div>
 
@@ -91,10 +91,10 @@ export function TopBar({
                                 </div>
                                 <div>
                                     <p className="font-serif-brand text-sm font-bold text-[#1C1917]">
-                                        Terminal Guide
+                                        Quick Guide
                                     </p>
                                     <p className="text-[11px] text-[#78716C]">
-                                        Artisan POS workflows &amp; controls
+                                        How to use the POS
                                     </p>
                                 </div>
                             </div>
@@ -102,23 +102,23 @@ export function TopBar({
                             <div className="mt-3 space-y-2 text-xs leading-5 text-[#57534E]">
                                 <div className="rounded-xl bg-[#FAF8F5] border border-[#E8E3DB]/60 p-2.5">
                                     <strong className="font-semibold text-[#1C1917]">
-                                        1. Add Items to Order:
+                                        1. Add to Order:
                                     </strong>{" "}
-                                    Tap any beverage or bakery card to add to current register ticket.
+                                    Tap items from the menu to add them to the current order.
                                 </div>
 
                                 <div className="rounded-xl bg-[#FAF8F5] border border-[#E8E3DB]/60 p-2.5">
                                     <strong className="font-semibold text-[#1C1917]">
-                                        2. Concurrency-Safe Checkout:
+                                        2. Complete Sale:
                                     </strong>{" "}
-                                    Proceeding to checkout locks stock and starts a 5-minute reservation timer.
+                                    Tap Complete Sale to hold items for 5 minutes during payment.
                                 </div>
 
                                 <div className="rounded-xl bg-[#FAF8F5] border border-[#E8E3DB]/60 p-2.5">
                                     <strong className="font-semibold text-[#1C1917]">
-                                        3. Gateway Simulation:
+                                        3. Receive Payment:
                                     </strong>{" "}
-                                    Test realistic gateway outcomes (Success, Decline, Timeout) with idempotency protection.
+                                    Accept cash, card, or mobile payment to finalize the sale.
                                 </div>
                             </div>
                         </div>
@@ -150,11 +150,11 @@ export function TopBar({
                         <div className="absolute right-0 top-11 z-[80] w-80 rounded-2xl border border-[#E8E3DB] bg-white p-4 shadow-xl shadow-[#78350F]/5 animate-in fade-in slide-in-from-top-2 duration-150">
                             <div className="flex items-center justify-between border-b border-[#E8E3DB] pb-3">
                                 <p className="font-serif-brand text-sm font-bold text-[#1C1917]">
-                                    Terminal Status
+                                    System Status
                                 </p>
                                 <span className="inline-flex items-center gap-1 rounded-full bg-[#EDF6EE] px-2 py-0.5 text-[10px] font-bold text-[#215A36] border border-[#C8E3CE]">
                                     <ShieldCheck className="size-3" />
-                                    Synchronized
+                                    Connected
                                 </span>
                             </div>
 
@@ -163,10 +163,10 @@ export function TopBar({
                                     <span className="mt-1 flex size-2 rounded-full bg-[#4E6047] shrink-0" />
                                     <div>
                                         <p className="text-xs font-semibold text-[#215A36]">
-                                            Inventory &amp; POS Active
+                                            POS Online
                                         </p>
                                         <p className="mt-0.5 text-[11px] leading-4 text-[#215A36]/80">
-                                            Row-level locking, automated expiry sweeper, and payment idempotency running smoothly.
+                                            Connected and ready to take orders.
                                         </p>
                                     </div>
                                 </div>
@@ -176,16 +176,16 @@ export function TopBar({
                                         <Sparkles className="size-3.5 text-[#78350F] shrink-0 mt-0.5" />
                                         <div>
                                             <p className="text-xs font-semibold text-[#8C4E08]">
-                                                Active Register Order
+                                                Current Order
                                             </p>
                                             <p className="mt-0.5 text-[11px] text-[#8C4E08]/80">
-                                                {cartItemCount} {cartItemCount === 1 ? "item" : "items"} staged in current order.
+                                                {cartItemCount} {cartItemCount === 1 ? "item" : "items"} in order.
                                             </p>
                                         </div>
                                     </div>
                                 ) : (
                                     <p className="py-2 text-center text-[11px] text-[#A8A29E]">
-                                        No pending order alerts
+                                        No active orders
                                     </p>
                                 )}
                             </div>
@@ -199,7 +199,7 @@ export function TopBar({
                 <div className="flex items-center gap-2 rounded-xl border border-[#E8E3DB] bg-white px-3 py-1.5 shadow-xs">
                     <ShoppingCart className="size-4 text-[#78350F]" />
                     <span className="text-xs font-semibold text-[#1C1917]">
-                        Ticket
+                        Order
                     </span>
                     <span
                         className={[
@@ -218,7 +218,7 @@ export function TopBar({
                     <div className="relative">
                         <button
                             type="button"
-                            aria-label="Operator Profile"
+                            aria-label="Profile"
                             aria-expanded={openPanel === "profile"}
                             onClick={() => togglePanel("profile")}
                             className={[
@@ -263,7 +263,7 @@ export function TopBar({
                                         }}
                                     >
                                         <Shield className="size-3" />
-                                        {user.role} Privilege
+                                        {user.role}
                                     </div>
                                 </div>
 
@@ -277,7 +277,7 @@ export function TopBar({
                                         className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-semibold text-[#9B2C2C] transition-colors hover:bg-[#FDF2F2] active:scale-[0.98]"
                                     >
                                         <LogOut className="size-3.5" />
-                                        <span>Sign Out Operator</span>
+                                        <span>Sign Out</span>
                                     </button>
                                 </div>
                             </div>

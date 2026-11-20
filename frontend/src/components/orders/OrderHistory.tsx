@@ -69,12 +69,12 @@ function formatCurrency(value: number) {
 }
 
 function formatHandledBy(handler: HandledBy | null | undefined): string {
-    if (!handler) return "Terminal Register (Default)"
+    if (!handler) return "POS"
     return handler.display_name
 }
 
 function formatHandledByWithRole(handler: HandledBy | null | undefined): string {
-    if (!handler) return "Terminal Register (Default)"
+    if (!handler) return "POS"
     const role = handler.role.charAt(0).toUpperCase() + handler.role.slice(1)
     return `${handler.display_name} (${role})`
 }
@@ -156,7 +156,7 @@ export function OrderHistory({
             setError(
                 requestError instanceof Error
                     ? requestError.message
-                    : "Unable to load orders ledger.",
+                    : "Unable to load sales history.",
             )
         } finally {
             setLoading(false)
@@ -183,7 +183,7 @@ export function OrderHistory({
                             setError(
                                 requestError instanceof Error
                                     ? requestError.message
-                                    : "Unable to load orders ledger.",
+                                    : "Unable to load sales history.",
                             )
                             setLoading(false)
                         }
@@ -267,7 +267,7 @@ export function OrderHistory({
             await cancelOrder(selectedOrder.id)
 
             setCancelMessage(
-                `Order #${selectedOrder.id} cancelled successfully. Inventory restored.`,
+                `Order #${selectedOrder.id} cancelled. Items returned to stock.`,
             )
 
             setConfirmCancelId(null)
@@ -289,7 +289,7 @@ export function OrderHistory({
             <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-[#FAF8F5]">
                 <div className="flex items-center gap-2.5 text-sm font-semibold text-[#78716C]">
                     <Loader2 className="size-5 animate-spin text-[#78350F]" />
-                    Loading orders ledger...
+                    Loading sales history...
                 </div>
             </div>
         )
@@ -304,12 +304,12 @@ export function OrderHistory({
                         <div className="flex items-center gap-2.5">
                             <ClipboardList className="size-5 text-[#78350F]" />
                             <h1 className="font-serif-brand text-2xl font-bold tracking-tight text-[#1C1917]">
-                                Order Ledger &amp; Audit Trail
+                                Sales History
                             </h1>
                         </div>
 
                         <p className="mt-0.5 text-xs text-[#78716C] font-medium">
-                            Real-time transaction log, operator attribution, and payment settlements.
+                            View past orders, receipts, and order statuses.
                         </p>
                     </div>
 
@@ -324,7 +324,7 @@ export function OrderHistory({
                                 refreshing ? "animate-spin text-[#78350F]" : ""
                             }`}
                         />
-                        Refresh Ledger
+                        Refresh
                     </button>
                 </div>
 
@@ -332,7 +332,7 @@ export function OrderHistory({
                 <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-4">
                     <div className="rounded-2xl border border-[#E8E3DB] bg-white p-4 shadow-2xs">
                         <p className="text-[11px] font-bold tracking-wider text-[#A8A29E] uppercase">
-                            Total Tickets
+                            Total Orders
                         </p>
                         <p className="tnum mt-1 text-2xl font-extrabold tracking-tight text-[#1C1917]">
                             {stats.totalCount}
@@ -342,7 +342,7 @@ export function OrderHistory({
                     <div className="rounded-2xl border border-[#C8E3CE] bg-[#EDF6EE]/60 p-4 shadow-2xs">
                         <div className="flex items-center justify-between">
                             <p className="text-[11px] font-bold tracking-wider text-[#215A36] uppercase">
-                                Settled Paid
+                                Completed
                             </p>
                             <CheckCircle2 className="size-4 text-[#4E6047]" />
                         </div>
@@ -354,7 +354,7 @@ export function OrderHistory({
                     <div className="rounded-2xl border border-[#F7E0B5] bg-[#FEF8EC]/60 p-4 shadow-2xs">
                         <div className="flex items-center justify-between">
                             <p className="text-[11px] font-bold tracking-wider text-[#8C4E08] uppercase">
-                                Active Stock Holds
+                                On Hold
                             </p>
                             <Clock3 className="size-4 text-[#B45309]" />
                         </div>
@@ -366,7 +366,7 @@ export function OrderHistory({
                     <div className="rounded-2xl border border-[#E8E3DB] bg-white p-4 shadow-2xs">
                         <div className="flex items-center justify-between">
                             <p className="text-[11px] font-bold tracking-wider text-[#A8A29E] uppercase">
-                                Paid Volume
+                                Total Sales
                             </p>
                             <DollarSign className="size-4 text-[#78350F]" />
                         </div>
@@ -384,7 +384,7 @@ export function OrderHistory({
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Filter by Order # or item..."
+                            placeholder="Filter by order # or product..."
                             aria-label="Filter orders"
                             className="h-9.5 w-full rounded-xl border border-[#E8E3DB] bg-white pl-9 pr-3 text-xs text-[#1C1917] outline-none placeholder:text-[#A8A29E] focus:border-[#78350F] focus:ring-2 focus:ring-[#78350F]/15 shadow-2xs"
                         />
@@ -392,7 +392,7 @@ export function OrderHistory({
 
                     <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
                         {[
-                            { id: "all", label: "All Orders" },
+                            { id: "all", label: "All" },
                             { id: "Reserved", label: "Reserved" },
                             { id: "Paid", label: "Paid" },
                             { id: "Expired", label: "Expired" },
@@ -453,10 +453,10 @@ export function OrderHistory({
                     <div className="flex min-h-72 flex-col items-center justify-center rounded-2xl border border-dashed border-[#D8D1C5] bg-white/70 p-8 text-center">
                         <Package className="size-8 text-[#A8A29E]" />
                         <p className="mt-3 font-serif-brand text-sm font-bold text-[#1C1917]">
-                            No Transactions Found
+                            No Orders Found
                         </p>
                         <p className="mt-1 text-xs text-[#78716C]">
-                            No register orders matched the active filter or query.
+                            No orders match your search or filter.
                         </p>
                     </div>
                 ) : (
@@ -515,7 +515,7 @@ export function OrderHistory({
                                                 <p className="mt-1 flex items-center gap-1.5 text-[11px] text-[#A8A29E] font-medium">
                                                     <User className="size-3 shrink-0 text-[#78716C]" />
                                                     <span>
-                                                        Operator:{" "}
+                                                        Taken by:{" "}
                                                         <span className={order.handled_by ? "font-semibold text-[#57534E]" : "italic"}>
                                                             {formatHandledBy(order.handled_by)}
                                                         </span>
@@ -539,7 +539,7 @@ export function OrderHistory({
                                         Select an Order
                                     </p>
                                     <p className="mt-1 text-xs text-[#78716C]">
-                                        Choose any transaction card to view itemized receipts and order details.
+                                        Choose any order to view receipt and item details.
                                     </p>
                                 </div>
                             ) : (
@@ -547,7 +547,7 @@ export function OrderHistory({
                                     <div className="flex items-start justify-between gap-4 border-b border-[#E8E3DB] pb-4">
                                         <div>
                                             <p className="text-[10px] font-bold tracking-wider text-[#A8A29E] uppercase">
-                                                Receipt Breakdown
+                                                Receipt
                                             </p>
 
                                             <h2 className="mt-0.5 font-serif-brand text-xl font-extrabold text-[#1C1917]">
@@ -566,7 +566,7 @@ export function OrderHistory({
                                                 {selectedOrder.completed_at && (
                                                     <p>
                                                         {selectedOrder.status === "Paid"
-                                                            ? "Settled: "
+                                                            ? "Completed: "
                                                             : selectedOrder.status === "Cancelled"
                                                                 ? "Cancelled: "
                                                                 : selectedOrder.status === "Expired"
@@ -581,7 +581,7 @@ export function OrderHistory({
                                                 <p className="flex items-center gap-1.5 pt-0.5">
                                                     <User className="size-3 shrink-0 text-[#78716C]" />
                                                     <span>
-                                                        Operator:{" "}
+                                                        Taken by:{" "}
                                                         <span className="font-semibold text-[#1C1917]">
                                                             {formatHandledByWithRole(selectedOrder.handled_by)}
                                                         </span>
@@ -602,7 +602,7 @@ export function OrderHistory({
                                     {/* Items breakdown */}
                                     <div className="mt-4">
                                         <p className="text-[10px] font-bold tracking-wider text-[#A8A29E] uppercase">
-                                            Itemized Products
+                                            Items
                                         </p>
 
                                         <div className="mt-2.5 divide-y divide-[#E8E3DB]/70">
@@ -632,7 +632,7 @@ export function OrderHistory({
                                     <div className="mt-4 border-t border-[#E8E3DB] pt-3">
                                         <div className="flex items-center justify-between">
                                             <span className="font-serif-brand text-xs font-bold text-[#57534E] uppercase">
-                                                Total Settle
+                                                Total
                                             </span>
                                             <span className="tnum text-xl font-extrabold text-[#1C1917]">
                                                 {formatCurrency(getOrderTotal(selectedOrder))}
@@ -646,7 +646,7 @@ export function OrderHistory({
                                             {confirmCancelId === selectedOrder.id ? (
                                                 <div className="rounded-xl border border-[#F8C8C8] bg-[#FDF2F2] p-3 text-center space-y-2.5">
                                                     <p className="text-xs font-bold text-[#9B2C2C]">
-                                                        Cancel this order and release inventory?
+                                                        Cancel this order and return items to stock?
                                                     </p>
                                                     <div className="grid grid-cols-2 gap-2">
                                                         <button
@@ -665,7 +665,7 @@ export function OrderHistory({
                                                             {cancelling && (
                                                                 <Loader2 className="size-3.5 animate-spin" />
                                                             )}
-                                                            {cancelling ? "Releasing..." : "Confirm Cancel"}
+                                                            {cancelling ? "Cancelling..." : "Cancel Order"}
                                                         </button>
                                                     </div>
                                                 </div>
@@ -676,7 +676,7 @@ export function OrderHistory({
                                                     disabled={cancelling}
                                                     className="flex h-9.5 w-full items-center justify-center gap-1.5 rounded-xl border border-[#F8C8C8] bg-white px-3 text-xs font-bold text-[#9B2C2C] hover:bg-[#FDF2F2] disabled:opacity-50 active:scale-95 transition-all shadow-2xs"
                                                 >
-                                                    Cancel Order &amp; Restore Stock
+                                                    Cancel Order
                                                 </button>
                                             )}
                                         </div>

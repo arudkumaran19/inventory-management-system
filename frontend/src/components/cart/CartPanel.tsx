@@ -57,12 +57,12 @@ export function CartPanel({
                     <div className="flex items-center gap-2">
                         <Receipt className="size-4 text-[#78350F]" />
                         <h2 className="font-serif-brand text-base font-bold tracking-tight text-[#1C1917]">
-                            Register Ticket
+                            Current Order
                         </h2>
                     </div>
 
                     <p className="mt-0.5 text-xs text-[#78716C] font-medium">
-                        {itemCount} {itemCount === 1 ? "item" : "items"} staged
+                        {itemCount} {itemCount === 1 ? "item" : "items"}
                     </p>
                 </div>
 
@@ -84,7 +84,7 @@ export function CartPanel({
                             />
                             {reservedOrderId
                                 ? `Order #${reservedOrderId} Hold`
-                                : "Active Ticket"}
+                                : "Active Order"}
                         </span>
                     )}
 
@@ -112,11 +112,11 @@ export function CartPanel({
                     </div>
 
                     <h3 className="mt-4 font-serif-brand text-sm font-bold text-[#1C1917]">
-                        Ticket is Empty
+                        Your order is empty
                     </h3>
 
                     <p className="mt-1 max-w-xs text-xs leading-relaxed text-[#78716C]">
-                        Tap any beverage or bakery item from the menu to build a customer order.
+                        Add products from the menu to begin.
                     </p>
                 </div>
             ) : (
@@ -199,7 +199,7 @@ export function CartPanel({
                             </div>
 
                             <div className="flex items-center justify-between text-xs font-medium text-[#78716C]">
-                                <span>Taxes &amp; Surcharges</span>
+                                <span>Tax</span>
                                 <span className="text-[11px] font-medium text-[#4E6047]">
                                     Included
                                 </span>
@@ -207,7 +207,7 @@ export function CartPanel({
 
                             <div className="flex items-center justify-between border-t border-[#E8E3DB] pt-2">
                                 <span className="font-serif-brand text-sm font-bold text-[#1C1917]">
-                                    Grand Total
+                                    Total
                                 </span>
                                 <span className="tnum text-xl font-extrabold tracking-tight text-[#1C1917]">
                                     ${subtotal.toFixed(2)}
@@ -235,18 +235,18 @@ export function CartPanel({
                                 {isCheckingOut ? (
                                     <>
                                         <Loader2 className="size-4 animate-spin text-white" />
-                                        <span>Reserving Stock (5m Hold)...</span>
+                                        <span>Holding items...</span>
                                     </>
                                 ) : (
-                                    <span>Proceed to Payment</span>
+                                    <span>Complete Sale</span>
                                 )}
                             </button>
                         )}
 
                         <p className="mt-2 text-center text-[10px] text-[#A8A29E]">
                             {reservedOrderId
-                                ? `Order #${reservedOrderId} stock hold active in settlement terminal.`
-                                : "Stock is automatically locked for 5 minutes at checkout."}
+                                ? `Order #${reservedOrderId} is held for payment.`
+                                : "Items are held for 5 minutes once payment begins."}
                         </p>
                     </div>
                 </>

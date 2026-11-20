@@ -19,18 +19,18 @@ type ProductToolbarProps = {
 }
 
 const stockOptions: { id: StockFilter; label: string; dot?: string }[] = [
-    { id: "all", label: "All Stock" },
+    { id: "all", label: "All" },
     { id: "in-stock", label: "In Stock", dot: "bg-[#4E6047]" },
-    { id: "low-stock", label: "Low Stock", dot: "bg-[#B45309]" },
+    { id: "low-stock", label: "Running Low", dot: "bg-[#B45309]" },
     { id: "out-of-stock", label: "Out of Stock", dot: "bg-[#9B2C2C]" },
 ]
 
 const categoryOptions: { id: CategoryFilter; label: string }[] = [
-    { id: "all", label: "All Catalog" },
-    { id: "coffee", label: "Espresso & Coffee" },
-    { id: "cold", label: "Cold Brew & Iced" },
-    { id: "tea", label: "Matcha & Tea" },
-    { id: "bakery", label: "Artisan Bakery" },
+    { id: "all", label: "All Categories" },
+    { id: "coffee", label: "Coffee" },
+    { id: "cold", label: "Cold Drinks" },
+    { id: "tea", label: "Tea" },
+    { id: "bakery", label: "Bakery" },
     { id: "retail", label: "Beans & Retail" },
 ]
 
@@ -54,7 +54,7 @@ export function ProductToolbar({
                         type="text"
                         value={search}
                         onChange={(event) => onSearchChange(event.target.value)}
-                        placeholder="Search espresso, cold brew, bakery..."
+                        placeholder="Search products..."
                         aria-label="Search products"
                         className="h-10 w-full rounded-xl border border-[#E8E3DB] bg-white pl-10 pr-9 text-sm text-[#1C1917] outline-none transition-all placeholder:text-[#A8A29E] focus:border-[#78350F] focus:ring-2 focus:ring-[#78350F]/15 shadow-2xs"
                     />

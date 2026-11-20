@@ -6,7 +6,6 @@ import {
     CreditCard,
     Loader2,
     PackageSearch,
-    ShieldCheck,
     ShoppingCart,
     Undo2,
     XCircle,
@@ -418,7 +417,7 @@ export function POSPage() {
             checkoutResponse.order.status === "Reserved"
         ) {
             addToast(
-                `Order #${checkoutResponse.order.id} is awaiting payment. Settle or cancel it before starting a new ticket.`,
+                `Order #${checkoutResponse.order.id} is awaiting payment. Complete or cancel it before starting a new order.`,
                 "info",
                 5000,
             )
@@ -435,7 +434,7 @@ export function POSPage() {
             const message =
                 requestError instanceof Error
                     ? requestError.message
-                    : "Unable to add item to cart."
+                    : "Couldn't add item to order."
 
             if (message.includes("Cart is not active")) {
                 try {
@@ -445,7 +444,7 @@ export function POSPage() {
                     setCheckoutResponse(null)
                     await addCartItem(freshCart.id, productId, 1)
                 } catch {
-                    addToast("Unable to add item to cart.", "error", 5000)
+                    addToast("Couldn't add item to order.", "error", 5000)
                     return
                 }
             } else {
@@ -517,7 +516,7 @@ export function POSPage() {
             setError(
                 requestError instanceof Error
                     ? requestError.message
-                    : "Unable to update quantity.",
+                    : "Couldn't update quantity.",
             )
         }
     }
@@ -568,7 +567,7 @@ export function POSPage() {
             addToast(
                 requestError instanceof Error
                     ? requestError.message
-                    : "Unable to update quantity.",
+                    : "Couldn't update quantity.",
                 "error",
                 5000,
             )
@@ -590,7 +589,7 @@ export function POSPage() {
             addToast(
                 requestError instanceof Error
                     ? requestError.message
-                    : "Unable to remove item.",
+                    : "Couldn't remove item.",
                 "error",
                 5000,
             )
@@ -626,7 +625,7 @@ export function POSPage() {
                 second: "2-digit",
             })
             addToast(
-                `Order #${response.order.id} reserved. Stock held until ${expiryTime}.`,
+                `Order #${response.order.id} created. Items held until ${expiryTime}.`,
                 "success",
                 5000,
             )
@@ -643,7 +642,7 @@ export function POSPage() {
             const message =
                 requestError instanceof Error
                     ? requestError.message
-                    : "Checkout failed."
+                    : "Couldn't complete sale."
 
             if (message.includes("Cart is not active")) {
                 try {
@@ -652,7 +651,7 @@ export function POSPage() {
                     setCartItems([])
                     setCheckoutResponse(null)
                     addToast(
-                        "The previous ticket was finalized. A new register ticket has been opened.",
+                        "The previous order was completed. A new order has been started.",
                         "error",
                         6000,
                     )
@@ -662,7 +661,7 @@ export function POSPage() {
                 }
             }
 
-            addToast(`Checkout failed: ${message}`, "error", 6000)
+            addToast(`Couldn't complete sale: ${message}`, "error", 6000)
             setCheckoutResponse(null)
             console.error(requestError)
         } finally {
@@ -680,7 +679,7 @@ export function POSPage() {
             await cancelOrder(checkoutResponse.order.id)
 
             addToast(
-                `Order #${checkoutResponse.order.id} reservation released. Inventory restored.`,
+                `Order #${checkoutResponse.order.id} cancelled. Items returned to stock.`,
                 "info",
                 5000,
             )
@@ -703,8 +702,8 @@ export function POSPage() {
             const message =
                 requestError instanceof Error
                     ? requestError.message
-                    : "Unable to cancel reservation."
-            addToast(`Unable to cancel reservation: ${message}`, "error", 6000)
+                    : "Couldn't cancel order."
+            addToast(`Couldn't cancel order: ${message}`, "error", 6000)
         } finally {
             setPaymentLoading(false)
         }
@@ -765,19 +764,19 @@ export function POSPage() {
 
             if (outcome === "success") {
                 addToast(
-                    `Payment approved. Order #${response.order_id} is settled.`,
+                    `Payment received. Order #${response.order_id} complete.`,
                     "success",
                     5000,
                 )
             } else if (outcome === "failure") {
                 addToast(
-                    `Card declined. Order #${response.order_id} cancelled and stock returned.`,
+                    `Payment declined. Order #${response.order_id} cancelled.`,
                     "error",
                     6000,
                 )
             } else {
                 addToast(
-                    `Payment timed out. Order #${response.order_id} expired and stock released.`,
+                    `Payment timed out. Items returned to stock.`,
                     "error",
                     6000,
                 )
@@ -831,20 +830,13 @@ export function POSPage() {
                             <div className="flex items-center gap-2.5">
                                 <PackageSearch className="size-5 text-[#78350F]" />
                                 <h2 className="font-serif-brand text-xl font-bold tracking-tight text-[#1C1917] sm:text-2xl">
-                                    Artisan Menu &amp; Catalog
+                                    Menu
                                 </h2>
                             </div>
 
                             <p className="mt-0.5 text-xs text-[#78716C] font-medium">
-                                Specialty roasts, cold brews, and fresh bakery items. Tap to stage on ticket.
+                                Select items to add to the order.
                             </p>
-                        </div>
-
-                        <div className="flex items-center gap-2 mt-2 sm:mt-0">
-                            <span className="inline-flex items-center gap-1.5 rounded-full bg-white border border-[#E8E3DB] px-3 py-1 text-xs font-semibold text-[#57534E]">
-                                <ShieldCheck className="size-3.5 text-[#4E6047]" />
-                                Concurrency Protection Active
-                            </span>
                         </div>
                     </div>
 
@@ -875,7 +867,7 @@ export function POSPage() {
                                     <div className="flex items-center gap-2.5">
                                         <CreditCard className="size-4.5 text-[#78350F]" />
                                         <p className="font-serif-brand text-base font-bold text-[#1C1917]">
-                                            Order #{checkoutResponse.order.id} Settlement
+                                            Order #{checkoutResponse.order.id}
                                         </p>
                                     </div>
 
@@ -884,7 +876,7 @@ export function POSPage() {
                                         {checkoutResponse.order.status === "Reserved" && remainingSeconds !== null && (
                                             <span className="inline-flex items-center gap-1.5 rounded-full bg-white border border-[#F7E0B5] px-2.5 py-0.5 text-xs font-bold text-[#8C4E08]">
                                                 <Clock className="size-3 text-[#B45309]" />
-                                                Stock Hold: <span className="tnum font-extrabold">{formatCountdown(remainingSeconds)}</span>
+                                                Held: <span className="tnum font-extrabold">{formatCountdown(remainingSeconds)}</span>
                                             </span>
                                         )}
                                     </div>
@@ -917,11 +909,8 @@ export function POSPage() {
                                     <>
                                         <div className="flex items-center justify-between text-xs text-[#78716C]">
                                             <p className="font-medium">
-                                                Simulate POS payment outcome for customer card/cash:
+                                                Record payment:
                                             </p>
-                                            <span className="text-[11px] font-semibold text-[#78350F]">
-                                                Idempotency Key Active
-                                            </span>
                                         </div>
 
                                         <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -932,7 +921,7 @@ export function POSPage() {
                                                 className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#215A36] px-3.5 text-xs font-bold text-white shadow-xs hover:bg-[#184428] disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 transition-all"
                                             >
                                                 <CheckCircle2 className="size-4" />
-                                                Approve Payment
+                                                Payment Received
                                             </button>
 
                                             <button
@@ -942,7 +931,7 @@ export function POSPage() {
                                                 className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#9B2C2C] px-3.5 text-xs font-bold text-white shadow-xs hover:bg-[#7D2323] disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 transition-all"
                                             >
                                                 <XCircle className="size-4" />
-                                                Decline Card
+                                                Payment Declined
                                             </button>
 
                                             <button
@@ -952,7 +941,7 @@ export function POSPage() {
                                                 className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#1C1917] px-3.5 text-xs font-bold text-white shadow-xs hover:bg-[#292524] disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 transition-all"
                                             >
                                                 <Clock className="size-4" />
-                                                Simulate Timeout
+                                                Payment Timeout
                                             </button>
 
                                             <button
@@ -962,21 +951,21 @@ export function POSPage() {
                                                 className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-[#D8D1C5] bg-white px-3.5 text-xs font-bold text-[#78350F] hover:bg-[#FAF8F5] disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 transition-all"
                                             >
                                                 <Undo2 className="size-4" />
-                                                Release Hold
+                                                Cancel Order
                                             </button>
                                         </div>
                                     </>
                                 ) : (
                                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-[#E8E3DB] rounded-xl p-3">
                                         <p className="text-xs font-medium text-[#1C1917]">
-                                            Order #{checkoutResponse.order.id} status is <strong>{checkoutResponse.order.status}</strong>. Customer transaction complete.
+                                            Order #{checkoutResponse.order.id} is {checkoutResponse.order.status.toLowerCase()}.
                                         </p>
                                         <button
                                             type="button"
                                             onClick={() => void handleStartNewOrder()}
                                             className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl bg-[#78350F] px-4 text-xs font-bold text-white hover:bg-[#5A270B] active:scale-95 transition-all shadow-xs"
                                         >
-                                            Start Next Order
+                                            New Order
                                             <ArrowRight className="size-3.5" />
                                         </button>
                                     </div>
@@ -985,7 +974,7 @@ export function POSPage() {
                                 {paymentLoading && (
                                     <div className="mt-3 flex items-center gap-2 text-xs font-semibold text-[#78350F]">
                                         <Loader2 className="size-3.5 animate-spin" />
-                                        Processing transaction through secure POS gateway...
+                                        Processing payment...
                                     </div>
                                 )}
                             </div>
@@ -998,14 +987,14 @@ export function POSPage() {
                             <div className="flex min-h-80 items-center justify-center rounded-2xl border border-[#E8E3DB] bg-white">
                                 <div className="flex items-center gap-2 text-sm text-[#78716C]">
                                     <Loader2 className="size-4 animate-spin text-[#78350F]" />
-                                    Loading café catalog...
+                                    Loading products...
                                 </div>
                             </div>
                         ) : error ? (
                             <div className="flex min-h-80 items-center justify-center rounded-2xl border border-[#F8C8C8] bg-[#FDF2F2]">
                                 <div className="text-center">
                                     <p className="font-serif-brand text-sm font-semibold text-[#9B2C2C]">
-                                        Unable to Load Menu
+                                        Couldn't load products
                                     </p>
                                     <p className="mt-1 text-xs text-[#9B2C2C]/80">
                                         {error}
@@ -1047,7 +1036,7 @@ export function POSPage() {
                     className="flex items-center gap-2.5 rounded-full bg-[#1C1917] px-5 py-3.5 text-sm font-bold text-white shadow-xl shadow-[#1C1917]/25 hover:bg-[#78350F] active:scale-95 transition-all"
                 >
                     <ShoppingCart className="size-4" />
-                    <span>Order Ticket</span>
+                    <span>Current Order</span>
                     <span className="flex size-5 items-center justify-center rounded-full bg-[#78350F] text-[11px] font-extrabold text-white">
                         {cartItemCount}
                     </span>

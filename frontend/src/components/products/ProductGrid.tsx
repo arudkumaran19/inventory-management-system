@@ -26,11 +26,11 @@ export function ProductGrid({
                 </div>
 
                 <h3 className="mt-4 font-serif-brand text-base font-bold text-[#1C1917]">
-                    No Menu Items Found
+                    No Products Found
                 </h3>
 
                 <p className="mt-1 max-w-sm text-xs leading-relaxed text-[#78716C]">
-                    We couldn't find any café items matching your search or category filter. Try clearing the query or selecting another tab.
+                    No products match your search or filter. Try a different term or clear the filter.
                 </p>
             </div>
         )
