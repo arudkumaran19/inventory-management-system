@@ -12,6 +12,7 @@ import {
     BrowserMultiFormatReader,
     BarcodeFormat,
     DecodeHintType,
+    ResultPoint,
 } from "@zxing/library"
 import { playScanSound } from "../../lib/sound"
 
@@ -71,7 +72,36 @@ export function BarcodeScannerModal({
         type: "success" | "error"
         text: string
     } | null>(null)
+    const [targetState, setTargetState] = useState<"idle" | "aligning" | "locked">("idle")
     const scanLockRef = useRef(false)
+    const dwellRef = useRef<{ code: string; frames: number; firstSeen: number } | null>(null)
+
+    // Tests whether the detected barcode's coordinates fall strictly within the marked camera viewfinder box
+    const isInsideViewfinder = useCallback((points: ResultPoint[] | undefined, video: HTMLVideoElement | null): boolean => {
+        if (!video || !points || points.length === 0) {
+            return false
+        }
+
+        const vw = video.videoWidth
+        const vh = video.videoHeight
+        if (!vw || !vh) return false
+
+        let sumX = 0
+        let sumY = 0
+        for (const pt of points) {
+            sumX += pt.getX()
+            sumY += pt.getY()
+        }
+        const avgX = sumX / points.length
+        const avgY = sumY / points.length
+
+        // Normalized positions across video frame [0, 1]
+        const normX = avgX / vw
+        const normY = avgY / vh
+
+        // Viewfinder is the center target box (center 60% width: 0.20 to 0.80, center 52% height: 0.24 to 0.76)
+        return normX >= 0.20 && normX <= 0.80 && normY >= 0.24 && normY <= 0.76
+    }, [])
 
     // Start camera stream
     useEffect(() => {
@@ -184,6 +214,7 @@ export function BarcodeScannerModal({
                     setTimeout(() => {
                         setScannedCode(null)
                         setRestockStatus(null)
+                        setTargetState("idle")
                         scanLockRef.current = false
                     }, 1400)
                 }
@@ -205,7 +236,7 @@ export function BarcodeScannerModal({
         }
 
         let isSubscribed = true
-        const codeReader = new BrowserMultiFormatReader(zxingHints, 180)
+        const codeReader = new BrowserMultiFormatReader(zxingHints, 160)
 
         try {
             codeReader.decodeFromVideoElementContinuously(
@@ -213,9 +244,43 @@ export function BarcodeScannerModal({
                 (result) => {
                     if (!isSubscribed || scanLockRef.current) return
                     if (result) {
+                        const points = result.getResultPoints()
+                        const inside = isInsideViewfinder(points, videoRef.current)
+
+                        // If barcode is outside the marked viewfinder area, ignore it!
+                        if (!inside) {
+                            dwellRef.current = null
+                            setTargetState("idle")
+                            return
+                        }
+
                         const raw = result.getText().trim()
-                        if (raw) {
-                            void handleProcessCode(raw)
+                        if (!raw) return
+
+                        const now = Date.now()
+                        const currentDwell = dwellRef.current
+
+                        if (currentDwell && currentDwell.code === raw) {
+                            currentDwell.frames += 1
+                            const elapsed = now - currentDwell.firstSeen
+
+                            // When barcode is held steady inside the marked area for at least 2 consecutive detections:
+                            if (currentDwell.frames >= 2 || elapsed >= 160) {
+                                setTargetState("locked")
+                                dwellRef.current = null
+                                void handleProcessCode(raw)
+                            } else {
+                                setTargetState("aligning")
+                            }
+                        } else {
+                            dwellRef.current = { code: raw, frames: 1, firstSeen: now }
+                            setTargetState("aligning")
+                        }
+                    } else {
+                        // Reset if no barcode detected for over 350ms
+                        if (dwellRef.current && Date.now() - dwellRef.current.firstSeen > 350) {
+                            dwellRef.current = null
+                            setTargetState("idle")
                         }
                     }
                 },
@@ -226,13 +291,15 @@ export function BarcodeScannerModal({
 
         return () => {
             isSubscribed = false
+            dwellRef.current = null
+            setTargetState("idle")
             try {
                 codeReader.reset()
             } catch {
                 // Ignore cleanup error
             }
         }
-    }, [isOpen, stream, cameraError, handleProcessCode])
+    }, [isOpen, stream, cameraError, handleProcessCode, isInsideViewfinder])
 
     const toggleTorch = async () => {
         if (!stream) return
@@ -369,19 +436,86 @@ export function BarcodeScannerModal({
 
                             {/* Viewfinder Target Reticle */}
                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none p-8">
-                                <div className="relative w-64 h-36 rounded-xl border-2 border-dashed border-amber-400/90 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]">
+                                <div
+                                    className={[
+                                        "relative w-64 h-36 rounded-xl border-2 transition-all duration-150",
+                                        targetState === "locked"
+                                            ? "border-emerald-400 bg-emerald-500/15 shadow-[0_0_0_9999px_rgba(0,0,0,0.55),0_0_20px_rgba(52,211,153,0.5)] scale-102"
+                                            : targetState === "aligning"
+                                                ? "border-sky-400 bg-sky-500/10 shadow-[0_0_0_9999px_rgba(0,0,0,0.5)] animate-pulse"
+                                                : "border-dashed border-amber-400/90 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]",
+                                    ].join(" ")}
+                                >
                                     {/* Corner accents */}
-                                    <div className="absolute -top-1 -left-1 size-4 border-t-3 border-l-3 border-amber-400" />
-                                    <div className="absolute -top-1 -right-1 size-4 border-t-3 border-r-3 border-amber-400" />
-                                    <div className="absolute -bottom-1 -left-1 size-4 border-b-3 border-l-3 border-amber-400" />
-                                    <div className="absolute -bottom-1 -right-1 size-4 border-b-3 border-r-3 border-amber-400" />
+                                    <div
+                                        className={[
+                                            "absolute -top-1 -left-1 size-4 border-t-3 border-l-3 transition-colors",
+                                            targetState === "locked"
+                                                ? "border-emerald-400"
+                                                : targetState === "aligning"
+                                                    ? "border-sky-400"
+                                                    : "border-amber-400",
+                                        ].join(" ")}
+                                    />
+                                    <div
+                                        className={[
+                                            "absolute -top-1 -right-1 size-4 border-t-3 border-r-3 transition-colors",
+                                            targetState === "locked"
+                                                ? "border-emerald-400"
+                                                : targetState === "aligning"
+                                                    ? "border-sky-400"
+                                                    : "border-amber-400",
+                                        ].join(" ")}
+                                    />
+                                    <div
+                                        className={[
+                                            "absolute -bottom-1 -left-1 size-4 border-b-3 border-l-3 transition-colors",
+                                            targetState === "locked"
+                                                ? "border-emerald-400"
+                                                : targetState === "aligning"
+                                                    ? "border-sky-400"
+                                                    : "border-amber-400",
+                                        ].join(" ")}
+                                    />
+                                    <div
+                                        className={[
+                                            "absolute -bottom-1 -right-1 size-4 border-b-3 border-r-3 transition-colors",
+                                            targetState === "locked"
+                                                ? "border-emerald-400"
+                                                : targetState === "aligning"
+                                                    ? "border-sky-400"
+                                                    : "border-amber-400",
+                                        ].join(" ")}
+                                    />
 
                                     {/* Scanning line animation */}
-                                    <div className="w-full h-0.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent animate-pulse absolute top-1/2 -translate-y-1/2 shadow-[0_0_8px_rgba(251,191,36,0.8)]" />
+                                    <div
+                                        className={[
+                                            "w-full h-0.5 absolute top-1/2 -translate-y-1/2 transition-colors",
+                                            targetState === "locked"
+                                                ? "bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.9)]"
+                                                : targetState === "aligning"
+                                                    ? "bg-sky-400 shadow-[0_0_10px_rgba(56,189,248,0.8)]"
+                                                    : "bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_8px_rgba(251,191,36,0.8)] animate-pulse",
+                                        ].join(" ")}
+                                    />
                                 </div>
 
-                                <p className="absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] text-white/90 font-medium bg-black/60 backdrop-blur-xs px-3 py-1 rounded-full whitespace-nowrap shadow-xs">
-                                    Hold barcode steady 15–20cm from camera
+                                <p
+                                    className={[
+                                        "absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] font-semibold px-3.5 py-1 rounded-full whitespace-nowrap shadow-sm backdrop-blur-xs transition-all",
+                                        targetState === "locked"
+                                            ? "bg-emerald-500 text-white"
+                                            : targetState === "aligning"
+                                                ? "bg-sky-500 text-white animate-pulse"
+                                                : "bg-black/60 text-white/90",
+                                    ].join(" ")}
+                                >
+                                    {targetState === "locked"
+                                        ? "Barcode aligned! Capturing..."
+                                        : targetState === "aligning"
+                                            ? "Hold steady in marked box..."
+                                            : "Align barcode inside marked area"}
                                 </p>
                             </div>
 
