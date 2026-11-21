@@ -149,8 +149,13 @@ export function InventoryView() {
             setSuccessMessage(`Identified "${matched.name}". Ready for stock adjustment.`)
             openEditForm(matched)
         } else {
-            playScanSound("error")
-            setError(`No product found with barcode "${cleaned}".`)
+            // Real-world practical workflow: If barcode doesn't exist yet, seamlessly
+            // open the Add Product modal with the scanned barcode pre-filled!
+            playScanSound("success")
+            setSuccessMessage(
+                `New barcode "${searchCode}" detected. Enter product details to add it to inventory.`,
+            )
+            openCreateFormWithBarcode(searchCode)
         }
     }
 
@@ -296,6 +301,16 @@ export function InventoryView() {
     function openCreateForm() {
         setEditingProduct(null)
         setForm(emptyForm)
+        setFormError("")
+        setIsFormOpen(true)
+    }
+
+    function openCreateFormWithBarcode(barcode: string) {
+        setEditingProduct(null)
+        setForm({
+            ...emptyForm,
+            barcode,
+        })
         setFormError("")
         setIsFormOpen(true)
     }
@@ -788,17 +803,29 @@ export function InventoryView() {
                                 </p>
 
                                 {(search || statusFilter !== "all") ? (
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setSearch("")
-                                            setStatusFilter("all")
-                                        }}
-                                        className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-[#E8E3DB] bg-white px-3.5 py-1.5 text-xs font-semibold text-[#1C1917] shadow-xs hover:bg-[#FAF8F5] transition cursor-pointer"
-                                    >
-                                        <X className="size-3.5" />
-                                        Clear Search & Filters
-                                    </button>
+                                    <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                                        {search.trim() && (
+                                            <button
+                                                type="button"
+                                                onClick={() => openCreateFormWithBarcode(search.trim())}
+                                                className="inline-flex items-center gap-1.5 rounded-xl bg-[#78350F] px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#5C2B09] transition cursor-pointer active:scale-98"
+                                            >
+                                                <Plus className="size-3.5 text-[#FDE68A]" />
+                                                Add &quot;{search.trim().length > 20 ? search.trim().slice(0, 20) + "..." : search.trim()}&quot; as Product
+                                            </button>
+                                        )}
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setSearch("")
+                                                setStatusFilter("all")
+                                            }}
+                                            className="inline-flex items-center gap-1.5 rounded-xl border border-[#E8E3DB] bg-white px-3.5 py-2 text-xs font-semibold text-[#1C1917] shadow-xs hover:bg-[#FAF8F5] transition cursor-pointer"
+                                        >
+                                            <X className="size-3.5" />
+                                            Clear Search &amp; Filters
+                                        </button>
+                                    </div>
                                 ) : (
                                     <button
                                         type="button"
@@ -1072,6 +1099,15 @@ export function InventoryView() {
                                 <div className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-800">
                                     <AlertTriangle className="size-4 shrink-0 text-rose-600" />
                                     <span>{formError}</span>
+                                </div>
+                            )}
+
+                            {!editingProduct && form.barcode && (
+                                <div className="flex items-center gap-2.5 rounded-xl border border-[#C8E3CE] bg-[#EDF6EE] px-4 py-3 text-xs text-[#215A36]">
+                                    <Barcode className="size-4.5 shrink-0 text-[#215A36]" />
+                                    <span>
+                                        Scanned Barcode: <strong className="font-mono font-bold text-[#1C1917] bg-white/70 px-1.5 py-0.5 rounded border border-[#C8E3CE]">{form.barcode}</strong>. Complete the name, price, and initial stock to register this item in inventory.
+                                    </span>
                                 </div>
                             )}
 
@@ -1399,8 +1435,8 @@ export function InventoryView() {
                 isOpen={isInventoryScannerOpen}
                 onClose={() => setIsInventoryScannerOpen(false)}
                 onScan={(code) => void handleBarcodeLookup(code)}
-                title="Scan Product to Identify & Restock"
-                subtitle="Scan a barcode with the camera or USB scanner to locate the item."
+                title="Scan Barcode to Restock or Add"
+                subtitle="Position any barcode in front of the camera or use a USB scanner. Existing items open for restocking; new barcodes open to add to inventory."
             />
 
             {/* Camera Scanner for Product Add/Edit Form */}

@@ -542,7 +542,11 @@ export function POSPage() {
 
                 if (!matchedProduct) {
                     playScanSound("error")
-                    addToast(`No product found with barcode "${cleaned}".`, "error", 4500)
+                    addToast(
+                        `No product found with barcode "${cleaned}". Please add this item in Stock before selling.`,
+                        "error",
+                        5000,
+                    )
                     return
                 }
 
