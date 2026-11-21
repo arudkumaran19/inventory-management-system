@@ -29,6 +29,7 @@ import {
     resumeCart,
     updateCartItemQuantity,
     getProductByBarcode,
+    createProduct,
     type Cart as ApiCart,
     type CheckoutResponse,
     type Product as ApiProduct,
@@ -48,6 +49,7 @@ import { ReceiptModal } from "../orders/ReceiptModal"
 import { BarcodeScannerModal } from "../common/BarcodeScannerModal"
 import { useBarcodeScanner } from "../../hooks/useBarcodeScanner"
 import { playScanSound } from "../../lib/sound"
+import { resolveBarcodeData } from "../../lib/barcodeParser"
 import { getCachedProducts, saveCachedProducts } from "../../lib/offlineStore"
 
 const CART_ID_KEY = "pos_cart_id"
@@ -536,6 +538,31 @@ export function POSPage() {
                             }
                         } catch {
                             // Not found on server
+                        }
+                    }
+                }
+
+                // 3. If still not matched, check if rich QR code or barcode metadata contains name and price
+                if (!matchedProduct) {
+                    const resolved = await resolveBarcodeData(cleaned)
+                    if (resolved.name && resolved.price && resolved.price > 0) {
+                        try {
+                            const newProd = await createProduct({
+                                name: resolved.name,
+                                price: resolved.price,
+                                available_stock: 50,
+                                barcode: resolved.barcode || searchCode,
+                                category: resolved.category || "Coffee",
+                            })
+                            matchedProduct = mapProduct(newProd)
+                            setProducts((prev) => [...prev, matchedProduct!])
+                            addToast(
+                                `Auto-registered "${resolved.name}" ($${resolved.price.toFixed(2)}) from barcode!`,
+                                "success",
+                                4000,
+                            )
+                        } catch {
+                            // Non-manager or creation error
                         }
                     }
                 }

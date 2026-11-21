@@ -16,6 +16,16 @@ type BarcodeScannerModalProps = {
     onScan: (barcode: string) => void
     title?: string
     subtitle?: string
+    allowRapidRestock?: boolean
+    onQuickRestock?: (
+        barcode: string,
+        quantity: number,
+    ) => Promise<{
+        success: boolean
+        productName?: string
+        newStock?: number
+        message?: string
+    }>
 }
 
 // Interface for native browser BarcodeDetector API
@@ -38,6 +48,8 @@ export function BarcodeScannerModal({
     onScan,
     title = "Scan Product Barcode",
     subtitle = "Position the barcode within the camera viewfinder or enter manually.",
+    allowRapidRestock = false,
+    onQuickRestock,
 }: BarcodeScannerModalProps) {
     const videoRef = useRef<HTMLVideoElement | null>(null)
     const [stream, setStream] = useState<MediaStream | null>(null)
@@ -47,6 +59,12 @@ export function BarcodeScannerModal({
     const [facingMode, setFacingMode] = useState<"environment" | "user">("environment")
     const [hasTorch, setHasTorch] = useState(false)
     const [torchOn, setTorchOn] = useState(false)
+    const [scanMode, setScanMode] = useState<"lookup" | "restock">("lookup")
+    const [packSize, setPackSize] = useState<number>(1)
+    const [restockStatus, setRestockStatus] = useState<{
+        type: "success" | "error"
+        text: string
+    } | null>(null)
     const scanLockRef = useRef(false)
 
     // Start camera stream
@@ -152,11 +170,42 @@ export function BarcodeScannerModal({
                         if (raw) {
                             scanLockRef.current = true
                             setScannedCode(raw)
-                            playScanSound("success")
-                            setTimeout(() => {
-                                onScan(raw)
-                                onClose()
-                            }, 450)
+
+                            if (allowRapidRestock && onQuickRestock && scanMode === "restock") {
+                                onQuickRestock(raw, packSize)
+                                    .then((res) => {
+                                        if (res.success) {
+                                            playScanSound("success")
+                                            setRestockStatus({
+                                                type: "success",
+                                                text: `+${packSize} ${res.productName || raw} (Stock: ${res.newStock ?? "?"})`,
+                                            })
+                                        } else {
+                                            playScanSound("error")
+                                            setRestockStatus({
+                                                type: "error",
+                                                text: res.message || "Product not found. Switch to Add mode.",
+                                            })
+                                        }
+                                    })
+                                    .catch(() => {
+                                        playScanSound("error")
+                                        setRestockStatus({ type: "error", text: "Restock error." })
+                                    })
+                                    .finally(() => {
+                                        setTimeout(() => {
+                                            setScannedCode(null)
+                                            setRestockStatus(null)
+                                            scanLockRef.current = false
+                                        }, 1400)
+                                    })
+                            } else {
+                                playScanSound("success")
+                                setTimeout(() => {
+                                    onScan(raw)
+                                    onClose()
+                                }, 450)
+                            }
                             return
                         }
                     }
@@ -176,7 +225,7 @@ export function BarcodeScannerModal({
             active = false
             cancelAnimationFrame(animationFrameId)
         }
-    }, [isOpen, stream, cameraError, onScan, onClose])
+    }, [isOpen, stream, cameraError, onScan, onClose, allowRapidRestock, onQuickRestock, scanMode, packSize])
 
     const toggleTorch = async () => {
         if (!stream) return
@@ -195,9 +244,44 @@ export function BarcodeScannerModal({
         e.preventDefault()
         const code = manualBarcode.trim()
         if (!code) return
-        playScanSound("success")
-        onScan(code)
-        onClose()
+
+        if (allowRapidRestock && onQuickRestock && scanMode === "restock") {
+            setManualBarcode("")
+            if (scanLockRef.current) return
+            scanLockRef.current = true
+            setScannedCode(code)
+            onQuickRestock(code, packSize)
+                .then((res) => {
+                    if (res.success) {
+                        playScanSound("success")
+                        setRestockStatus({
+                            type: "success",
+                            text: `+${packSize} ${res.productName || code} (Stock: ${res.newStock ?? "?"})`,
+                        })
+                    } else {
+                        playScanSound("error")
+                        setRestockStatus({
+                            type: "error",
+                            text: res.message || "Product not found. Switch to Add mode.",
+                        })
+                    }
+                })
+                .catch(() => {
+                    playScanSound("error")
+                    setRestockStatus({ type: "error", text: "Restock error." })
+                })
+                .finally(() => {
+                    setTimeout(() => {
+                        setScannedCode(null)
+                        setRestockStatus(null)
+                        scanLockRef.current = false
+                    }, 1400)
+                })
+        } else {
+            playScanSound("success")
+            onScan(code)
+            onClose()
+        }
     }
 
     if (!isOpen) return null
@@ -230,6 +314,66 @@ export function BarcodeScannerModal({
                         <X className="size-5" />
                     </button>
                 </div>
+
+                {/* Mode Selector for Rapid Restock */}
+                {allowRapidRestock && (
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#E8E3DB] bg-[#FAF8F5] px-4 py-2.5">
+                        <div className="flex rounded-lg border border-[#E8E3DB] bg-white p-0.5 shadow-2xs">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setScanMode("lookup")
+                                    setRestockStatus(null)
+                                }}
+                                className={[
+                                    "px-2.5 py-1 text-[11px] font-semibold rounded-md transition-all cursor-pointer",
+                                    scanMode === "lookup"
+                                        ? "bg-[#78350F] text-white"
+                                        : "text-[#78716C] hover:text-[#1C1917]",
+                                ].join(" ")}
+                            >
+                                Identify &amp; Add
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setScanMode("restock")
+                                    setRestockStatus(null)
+                                }}
+                                className={[
+                                    "flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded-md transition-all cursor-pointer",
+                                    scanMode === "restock"
+                                        ? "bg-[#215A36] text-white"
+                                        : "text-[#78716C] hover:text-[#1C1917]",
+                                ].join(" ")}
+                            >
+                                <Zap className="size-3 text-amber-300" />
+                                ⚡ Rapid Restock
+                            </button>
+                        </div>
+
+                        {scanMode === "restock" && (
+                            <div className="flex items-center gap-1">
+                                <span className="text-[10px] font-bold text-[#78716C] uppercase">Pack:</span>
+                                {[1, 6, 12, 24].map((size) => (
+                                    <button
+                                        key={size}
+                                        type="button"
+                                        onClick={() => setPackSize(size)}
+                                        className={[
+                                            "px-2 py-0.5 text-[11px] font-bold rounded-md border transition-all cursor-pointer",
+                                            packSize === size
+                                                ? "bg-[#215A36] text-white border-[#215A36] shadow-2xs"
+                                                : "bg-white text-[#1C1917] border-[#E8E3DB] hover:bg-[#FAF8F5]",
+                                        ].join(" ")}
+                                    >
+                                        +{size}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* Camera Viewport */}
                 <div className="relative aspect-4/3 w-full bg-stone-900 overflow-hidden flex items-center justify-center">
@@ -294,16 +438,52 @@ export function BarcodeScannerModal({
                                 </button>
                             </div>
 
-                            {/* Success Overlay Banner */}
-                            {scannedCode && (
+                            {/* Restock or Success Overlay Banner */}
+                            {restockStatus ? (
+                                <div
+                                    className={[
+                                        "absolute inset-0 flex flex-col items-center justify-center text-white p-5 animate-in fade-in duration-100 z-20 text-center",
+                                        restockStatus.type === "success"
+                                            ? "bg-[#215A36]/95"
+                                            : "bg-rose-900/95",
+                                    ].join(" ")}
+                                >
+                                    {restockStatus.type === "success" ? (
+                                        <>
+                                            <CheckCircle2 className="size-12 text-[#A7F3D0] animate-bounce" />
+                                            <p className="mt-2 text-base font-bold tracking-tight">
+                                                Stock Received!
+                                            </p>
+                                            <p className="font-mono text-sm font-semibold bg-black/30 px-3 py-1.5 rounded-xl mt-1 text-[#A7F3D0] max-w-xs break-words">
+                                                {restockStatus.text}
+                                            </p>
+                                            <p className="mt-3 text-[11px] text-white/80 font-medium animate-pulse">
+                                                Ready for next scan...
+                                            </p>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <X className="size-12 text-rose-300" />
+                                            <p className="mt-2 text-base font-bold tracking-tight text-white">
+                                                Item Not Found
+                                            </p>
+                                            <p className="text-xs text-rose-200 mt-1 max-w-xs">
+                                                {restockStatus.text}
+                                            </p>
+                                        </>
+                                    )}
+                                </div>
+                            ) : scannedCode ? (
                                 <div className="absolute inset-0 bg-[#215A36]/90 flex flex-col items-center justify-center text-white p-4 animate-in fade-in duration-100 z-20">
                                     <CheckCircle2 className="size-12 text-[#A7F3D0] animate-bounce" />
-                                    <p className="mt-2 text-sm font-bold tracking-tight">Barcode Detected</p>
+                                    <p className="mt-2 text-sm font-bold tracking-tight">
+                                        Barcode Detected
+                                    </p>
                                     <p className="font-mono text-base font-extrabold bg-black/20 px-3 py-1 rounded-lg mt-1 tracking-wider">
                                         {scannedCode}
                                     </p>
                                 </div>
-                            )}
+                            ) : null}
                         </>
                     )}
                 </div>

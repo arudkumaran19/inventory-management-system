@@ -21,6 +21,7 @@ import { IngredientsModal } from "./IngredientsModal"
 import { BarcodeScannerModal } from "../common/BarcodeScannerModal"
 import { useBarcodeScanner } from "../../hooks/useBarcodeScanner"
 import { playScanSound } from "../../lib/sound"
+import { resolveBarcodeData } from "../../lib/barcodeParser"
 import {
     createProduct,
     deleteProduct,
@@ -104,27 +105,22 @@ export function InventoryView() {
     const [isInventoryScannerOpen, setIsInventoryScannerOpen] = useState(false)
     const [isCameraScanningForm, setIsCameraScanningForm] = useState(false)
 
-    async function handleBarcodeLookup(scannedCode: string) {
+    async function handleQuickRestock(
+        scannedCode: string,
+        quantity: number,
+    ): Promise<{
+        success: boolean
+        productName?: string
+        newStock?: number
+        message?: string
+    }> {
         const cleaned = scannedCode.trim()
-        if (!cleaned) return
+        if (!cleaned) return { success: false, message: "Empty barcode" }
 
-        // Normalize if digits with spaces (e.g. retail box "0 12345 67890 5")
         const noSpaces = cleaned.replace(/\s+/g, "")
         const searchCode =
             /^\d+$/.test(noSpaces) && noSpaces.length >= 3 ? noSpaces : cleaned
 
-        // If form modal is open, fill the form barcode field
-        if (isFormOpen) {
-            setForm((current) => ({
-                ...current,
-                barcode: searchCode,
-            }))
-            playScanSound("success")
-            setSuccessMessage(`Scanned barcode: ${searchCode}`)
-            return
-        }
-
-        // Look up product in products list or server
         let matched = products.find(
             (p) =>
                 p.barcode &&
@@ -144,18 +140,112 @@ export function InventoryView() {
             }
         }
 
+        if (!matched) {
+            return {
+                success: false,
+                message: `Unlisted barcode "${cleaned}". Switch to "Identify & Add" to register this new product.`,
+            }
+        }
+
+        const nextStock = matched.available_stock + quantity
+        await updateProduct(matched.id, {
+            available_stock: nextStock,
+            adjustment_reason: "Supplier Delivery",
+        })
+
+        setProducts((current) =>
+            current.map((p) =>
+                p.id === matched!.id ? { ...p, available_stock: nextStock } : p,
+            ),
+        )
+
+        return {
+            success: true,
+            productName: matched.name,
+            newStock: nextStock,
+        }
+    }
+
+    async function handleBarcodeLookup(scannedCode: string) {
+        const cleaned = scannedCode.trim()
+        if (!cleaned) return
+
+        // Resolve rich QR code data or online consumer product metadata (e.g. Open Food Facts)
+        const resolved = await resolveBarcodeData(scannedCode)
+        const targetBarcode = resolved.barcode || cleaned
+
+        // If form modal is open, fill the form fields directly
+        if (isFormOpen) {
+            setForm((current) => ({
+                ...current,
+                barcode: targetBarcode,
+                name: current.name || resolved.name || "",
+                price: current.price || (resolved.price ? String(resolved.price) : ""),
+                available_stock:
+                    current.available_stock ||
+                    (resolved.quantity ? String(resolved.quantity) : "10"),
+                category: current.category || resolved.category || "Coffee",
+            }))
+            playScanSound("success")
+            setSuccessMessage(
+                `Scanned barcode: ${targetBarcode}${resolved.name ? ` (${resolved.name})` : ""}`,
+            )
+            return
+        }
+
+        // Look up product in products list or server
+        let matched = products.find(
+            (p) =>
+                p.barcode &&
+                (p.barcode.toLowerCase() === cleaned.toLowerCase() ||
+                    p.barcode.toLowerCase() === targetBarcode.toLowerCase()),
+        )
+
+        if (!matched) {
+            try {
+                matched = await getProductByBarcode(targetBarcode)
+            } catch {
+                try {
+                    matched = await getProductByBarcode(cleaned)
+                } catch {
+                    // Not found
+                }
+            }
+        }
+
         if (matched) {
             playScanSound("success")
             setSuccessMessage(`Identified "${matched.name}". Ready for stock adjustment.`)
             openEditForm(matched)
         } else {
             // Real-world practical workflow: If barcode doesn't exist yet, seamlessly
-            // open the Add Product modal with the scanned barcode pre-filled!
+            // open the Add Product modal with all parsed/retrieved details pre-filled!
             playScanSound("success")
-            setSuccessMessage(
-                `New barcode "${searchCode}" detected. Enter product details to add it to inventory.`,
-            )
-            openCreateFormWithBarcode(searchCode)
+            const sourceNote =
+                resolved.source === "open_food_facts"
+                    ? `Identified "${resolved.name}" via barcode database! Complete details to add to inventory.`
+                    : resolved.source === "qr_json" ||
+                        resolved.source === "qr_keyvalue" ||
+                        resolved.source === "delimited"
+                        ? "Product details extracted directly from barcode! Confirm to add."
+                        : `New barcode "${targetBarcode}" detected. Enter product details to add it to inventory.`
+
+            setSuccessMessage(sourceNote)
+
+            setEditingProduct(null)
+            setForm({
+                ...emptyForm,
+                barcode: targetBarcode,
+                name: resolved.name || "",
+                price: resolved.price ? String(resolved.price) : "",
+                available_stock:
+                    resolved.quantity !== undefined
+                        ? String(resolved.quantity)
+                        : "10",
+                category: resolved.category || "Coffee",
+            })
+            setFormError("")
+            setIsFormOpen(true)
         }
     }
 
@@ -1437,6 +1527,8 @@ export function InventoryView() {
                 onScan={(code) => void handleBarcodeLookup(code)}
                 title="Scan Barcode to Restock or Add"
                 subtitle="Position any barcode in front of the camera or use a USB scanner. Existing items open for restocking; new barcodes open to add to inventory."
+                allowRapidRestock={true}
+                onQuickRestock={handleQuickRestock}
             />
 
             {/* Camera Scanner for Product Add/Edit Form */}
