@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, useCallback } from "react"
 import {
     Barcode,
     CameraOff,
@@ -8,6 +8,11 @@ import {
     X,
     Zap,
 } from "lucide-react"
+import {
+    BrowserMultiFormatReader,
+    BarcodeFormat,
+    DecodeHintType,
+} from "@zxing/library"
 import { playScanSound } from "../../lib/sound"
 
 type BarcodeScannerModalProps = {
@@ -28,19 +33,20 @@ type BarcodeScannerModalProps = {
     }>
 }
 
-// Interface for native browser BarcodeDetector API
-interface NativeBarcodeDetector {
-    detect(image: ImageBitmapSource): Promise<Array<{ rawValue: string }>>
-}
-
-declare global {
-    interface Window {
-        BarcodeDetector?: {
-            new (options?: { formats: string[] }): NativeBarcodeDetector
-            getSupportedFormats(): Promise<string[]>
-        }
-    }
-}
+const zxingHints = new Map<DecodeHintType, unknown>()
+zxingHints.set(DecodeHintType.POSSIBLE_FORMATS, [
+    BarcodeFormat.EAN_13,
+    BarcodeFormat.UPC_A,
+    BarcodeFormat.CODE_128,
+    BarcodeFormat.CODE_39,
+    BarcodeFormat.QR_CODE,
+    BarcodeFormat.EAN_8,
+    BarcodeFormat.UPC_E,
+    BarcodeFormat.DATA_MATRIX,
+    BarcodeFormat.ITF,
+    BarcodeFormat.CODABAR,
+])
+zxingHints.set(DecodeHintType.TRY_HARDER, true)
 
 export function BarcodeScannerModal({
     isOpen,
@@ -105,10 +111,23 @@ export function BarcodeScannerModal({
                     await videoRef.current.play()
                 }
 
-                // Check for torch capability
+                // Check for torch capability and enable continuous autofocus if supported
                 const track = newStream.getVideoTracks()[0]
-                const capabilities = track.getCapabilities?.() as { torch?: boolean } | undefined
+                const capabilities = track.getCapabilities?.() as {
+                    torch?: boolean
+                    focusMode?: string[]
+                } | undefined
                 setHasTorch(Boolean(capabilities?.torch))
+
+                if (capabilities?.focusMode?.includes("continuous")) {
+                    try {
+                        await track.applyConstraints({
+                            advanced: [{ focusMode: "continuous" } as MediaTrackConstraintSet],
+                        })
+                    } catch {
+                        // ignore autofocus error
+                    }
+                }
             } catch (err) {
                 if (isMounted) {
                     const msg =
@@ -136,96 +155,84 @@ export function BarcodeScannerModal({
         }
     }, [isOpen, facingMode])
 
-    // Continuous detection loop using BarcodeDetector if available
+    const handleProcessCode = useCallback(
+        async (raw: string) => {
+            if (scanLockRef.current) return
+            scanLockRef.current = true
+            setScannedCode(raw)
+
+            if (allowRapidRestock && onQuickRestock && scanMode === "restock") {
+                try {
+                    const res = await onQuickRestock(raw, packSize)
+                    if (res.success) {
+                        playScanSound("success")
+                        setRestockStatus({
+                            type: "success",
+                            text: `+${packSize} ${res.productName || raw} (Stock: ${res.newStock ?? "?"})`,
+                        })
+                    } else {
+                        playScanSound("error")
+                        setRestockStatus({
+                            type: "error",
+                            text: res.message || "Product not found. Switch to Add mode.",
+                        })
+                    }
+                } catch {
+                    playScanSound("error")
+                    setRestockStatus({ type: "error", text: "Restock error." })
+                } finally {
+                    setTimeout(() => {
+                        setScannedCode(null)
+                        setRestockStatus(null)
+                        scanLockRef.current = false
+                    }, 1400)
+                }
+            } else {
+                playScanSound("success")
+                setTimeout(() => {
+                    onScan(raw)
+                    onClose()
+                }, 350)
+            }
+        },
+        [allowRapidRestock, onQuickRestock, scanMode, packSize, onScan, onClose],
+    )
+
+    // Continuous real-time barcode decoding using ZXing multi-format reader engine
     useEffect(() => {
-        if (!isOpen || !stream || cameraError || !window.BarcodeDetector) {
+        if (!isOpen || !stream || cameraError || !videoRef.current) {
             return
         }
 
-        let animationFrameId: number
-        let active = true
+        let isSubscribed = true
+        const codeReader = new BrowserMultiFormatReader(zxingHints, 180)
 
-        let detector: NativeBarcodeDetector | null = null
         try {
-            detector = new window.BarcodeDetector({
-                formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "code_39", "qr_code"],
-            })
-        } catch {
-            // detector format not supported
-        }
-
-        const scanFrame = async () => {
-            if (!active || !videoRef.current || !detector || scanLockRef.current) {
-                if (active) {
-                    animationFrameId = requestAnimationFrame(scanFrame)
-                }
-                return
-            }
-
-            if (videoRef.current.readyState >= 2) {
-                try {
-                    const barcodes = await detector.detect(videoRef.current)
-                    if (barcodes.length > 0 && !scanLockRef.current) {
-                        const raw = barcodes[0].rawValue.trim()
+            codeReader.decodeFromVideoElementContinuously(
+                videoRef.current,
+                (result) => {
+                    if (!isSubscribed || scanLockRef.current) return
+                    if (result) {
+                        const raw = result.getText().trim()
                         if (raw) {
-                            scanLockRef.current = true
-                            setScannedCode(raw)
-
-                            if (allowRapidRestock && onQuickRestock && scanMode === "restock") {
-                                onQuickRestock(raw, packSize)
-                                    .then((res) => {
-                                        if (res.success) {
-                                            playScanSound("success")
-                                            setRestockStatus({
-                                                type: "success",
-                                                text: `+${packSize} ${res.productName || raw} (Stock: ${res.newStock ?? "?"})`,
-                                            })
-                                        } else {
-                                            playScanSound("error")
-                                            setRestockStatus({
-                                                type: "error",
-                                                text: res.message || "Product not found. Switch to Add mode.",
-                                            })
-                                        }
-                                    })
-                                    .catch(() => {
-                                        playScanSound("error")
-                                        setRestockStatus({ type: "error", text: "Restock error." })
-                                    })
-                                    .finally(() => {
-                                        setTimeout(() => {
-                                            setScannedCode(null)
-                                            setRestockStatus(null)
-                                            scanLockRef.current = false
-                                        }, 1400)
-                                    })
-                            } else {
-                                playScanSound("success")
-                                setTimeout(() => {
-                                    onScan(raw)
-                                    onClose()
-                                }, 450)
-                            }
-                            return
+                            void handleProcessCode(raw)
                         }
                     }
-                } catch {
-                    // Frame detection error
-                }
-            }
-
-            if (active) {
-                animationFrameId = requestAnimationFrame(scanFrame)
-            }
+                },
+            )
+        } catch {
+            // ZXing stream initialization failed
         }
-
-        animationFrameId = requestAnimationFrame(scanFrame)
 
         return () => {
-            active = false
-            cancelAnimationFrame(animationFrameId)
+            isSubscribed = false
+            try {
+                codeReader.reset()
+            } catch {
+                // Ignore cleanup error
+            }
         }
-    }, [isOpen, stream, cameraError, onScan, onClose, allowRapidRestock, onQuickRestock, scanMode, packSize])
+    }, [isOpen, stream, cameraError, handleProcessCode])
 
     const toggleTorch = async () => {
         if (!stream) return
@@ -244,44 +251,8 @@ export function BarcodeScannerModal({
         e.preventDefault()
         const code = manualBarcode.trim()
         if (!code) return
-
-        if (allowRapidRestock && onQuickRestock && scanMode === "restock") {
-            setManualBarcode("")
-            if (scanLockRef.current) return
-            scanLockRef.current = true
-            setScannedCode(code)
-            onQuickRestock(code, packSize)
-                .then((res) => {
-                    if (res.success) {
-                        playScanSound("success")
-                        setRestockStatus({
-                            type: "success",
-                            text: `+${packSize} ${res.productName || code} (Stock: ${res.newStock ?? "?"})`,
-                        })
-                    } else {
-                        playScanSound("error")
-                        setRestockStatus({
-                            type: "error",
-                            text: res.message || "Product not found. Switch to Add mode.",
-                        })
-                    }
-                })
-                .catch(() => {
-                    playScanSound("error")
-                    setRestockStatus({ type: "error", text: "Restock error." })
-                })
-                .finally(() => {
-                    setTimeout(() => {
-                        setScannedCode(null)
-                        setRestockStatus(null)
-                        scanLockRef.current = false
-                    }, 1400)
-                })
-        } else {
-            playScanSound("success")
-            onScan(code)
-            onClose()
-        }
+        setManualBarcode("")
+        void handleProcessCode(code)
     }
 
     if (!isOpen) return null
@@ -408,6 +379,10 @@ export function BarcodeScannerModal({
                                     {/* Scanning line animation */}
                                     <div className="w-full h-0.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent animate-pulse absolute top-1/2 -translate-y-1/2 shadow-[0_0_8px_rgba(251,191,36,0.8)]" />
                                 </div>
+
+                                <p className="absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] text-white/90 font-medium bg-black/60 backdrop-blur-xs px-3 py-1 rounded-full whitespace-nowrap shadow-xs">
+                                    Hold barcode steady 15–20cm from camera
+                                </p>
                             </div>
 
                             {/* Camera controls overlay */}
