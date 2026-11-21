@@ -9,10 +9,12 @@ import {
     Zap,
 } from "lucide-react"
 import {
-    BrowserMultiFormatReader,
+    MultiFormatReader,
+    HTMLCanvasElementLuminanceSource,
+    HybridBinarizer,
+    BinaryBitmap,
     BarcodeFormat,
     DecodeHintType,
-    ResultPoint,
 } from "@zxing/library"
 import { playScanSound } from "../../lib/sound"
 
@@ -75,33 +77,6 @@ export function BarcodeScannerModal({
     const [targetState, setTargetState] = useState<"idle" | "aligning" | "locked">("idle")
     const scanLockRef = useRef(false)
     const dwellRef = useRef<{ code: string; frames: number; firstSeen: number } | null>(null)
-
-    // Tests whether the detected barcode's coordinates fall strictly within the marked camera viewfinder box
-    const isInsideViewfinder = useCallback((points: ResultPoint[] | undefined, video: HTMLVideoElement | null): boolean => {
-        if (!video || !points || points.length === 0) {
-            return false
-        }
-
-        const vw = video.videoWidth
-        const vh = video.videoHeight
-        if (!vw || !vh) return false
-
-        let sumX = 0
-        let sumY = 0
-        for (const pt of points) {
-            sumX += pt.getX()
-            sumY += pt.getY()
-        }
-        const avgX = sumX / points.length
-        const avgY = sumY / points.length
-
-        // Normalized positions across video frame [0, 1]
-        const normX = avgX / vw
-        const normY = avgY / vh
-
-        // Viewfinder is the center target box (center 60% width: 0.20 to 0.80, center 52% height: 0.24 to 0.76)
-        return normX >= 0.20 && normX <= 0.80 && normY >= 0.24 && normY <= 0.76
-    }, [])
 
     // Start camera stream
     useEffect(() => {
@@ -229,43 +204,61 @@ export function BarcodeScannerModal({
         [allowRapidRestock, onQuickRestock, scanMode, packSize, onScan, onClose],
     )
 
-    // Continuous real-time barcode decoding using ZXing multi-format reader engine
+    // Continuous real-time barcode decoding using offscreen canvas ROI cropping
+    // Video stream is NEVER touched or stopped by ZXing, eliminating camera blackouts!
     useEffect(() => {
-        if (!isOpen || !stream || cameraError || !videoRef.current) {
+        if (!isOpen || !stream || cameraError) {
             return
         }
 
-        let isSubscribed = true
-        const codeReader = new BrowserMultiFormatReader(zxingHints, 160)
+        const video = videoRef.current
+        if (!video) return
 
-        try {
-            codeReader.decodeFromVideoElementContinuously(
-                videoRef.current,
-                (result) => {
-                    if (!isSubscribed || scanLockRef.current) return
-                    if (result) {
-                        const points = result.getResultPoints()
-                        const inside = isInsideViewfinder(points, videoRef.current)
+        let isRunning = true
+        const reader = new MultiFormatReader()
+        reader.setHints(zxingHints)
 
-                        // If barcode is outside the marked viewfinder area, ignore it!
-                        if (!inside) {
-                            dwellRef.current = null
-                            setTargetState("idle")
-                            return
-                        }
+        const canvas = document.createElement("canvas")
+        const ctx = canvas.getContext("2d", { willReadFrequently: true })
 
-                        const raw = result.getText().trim()
-                        if (!raw) return
+        const intervalId = setInterval(() => {
+            if (!isRunning || scanLockRef.current || !video || video.readyState < 2) {
+                return
+            }
 
+            const vw = video.videoWidth
+            const vh = video.videoHeight
+            if (vw === 0 || vh === 0 || !ctx) return
+
+            // Crop strictly to the marked center target box (center 60% width, center 40% height)
+            const cropW = Math.floor(vw * 0.60)
+            const cropH = Math.floor(vh * 0.40)
+            const cropX = Math.floor((vw - cropW) / 2)
+            const cropY = Math.floor((vh - cropH) / 2)
+
+            canvas.width = cropW
+            canvas.height = cropH
+
+            // Draw ONLY the viewfinder area to the canvas. Anything outside the box is not drawn!
+            ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH)
+
+            try {
+                const luminanceSource = new HTMLCanvasElementLuminanceSource(canvas)
+                const binarizer = new HybridBinarizer(luminanceSource)
+                const bitmap = new BinaryBitmap(binarizer)
+                const result = reader.decode(bitmap)
+
+                if (result) {
+                    const raw = result.getText().trim()
+                    if (raw) {
                         const now = Date.now()
-                        const currentDwell = dwellRef.current
+                        const dwell = dwellRef.current
 
-                        if (currentDwell && currentDwell.code === raw) {
-                            currentDwell.frames += 1
-                            const elapsed = now - currentDwell.firstSeen
-
-                            // When barcode is held steady inside the marked area for at least 2 consecutive detections:
-                            if (currentDwell.frames >= 2 || elapsed >= 160) {
+                        if (dwell && dwell.code === raw) {
+                            dwell.frames += 1
+                            const elapsed = now - dwell.firstSeen
+                            // Confirmed steady inside marked area for at least 2 consecutive detections
+                            if (dwell.frames >= 2 || elapsed >= 160) {
                                 setTargetState("locked")
                                 dwellRef.current = null
                                 void handleProcessCode(raw)
@@ -276,30 +269,26 @@ export function BarcodeScannerModal({
                             dwellRef.current = { code: raw, frames: 1, firstSeen: now }
                             setTargetState("aligning")
                         }
-                    } else {
-                        // Reset if no barcode detected for over 350ms
-                        if (dwellRef.current && Date.now() - dwellRef.current.firstSeen > 350) {
-                            dwellRef.current = null
-                            setTargetState("idle")
-                        }
                     }
-                },
-            )
-        } catch {
-            // ZXing stream initialization failed
-        }
+                }
+            } catch {
+                // No barcode detected in this cropped frame
+                if (dwellRef.current && Date.now() - dwellRef.current.firstSeen > 350) {
+                    dwellRef.current = null
+                    setTargetState("idle")
+                }
+            } finally {
+                reader.reset()
+            }
+        }, 120)
 
         return () => {
-            isSubscribed = false
+            isRunning = false
+            clearInterval(intervalId)
             dwellRef.current = null
             setTargetState("idle")
-            try {
-                codeReader.reset()
-            } catch {
-                // Ignore cleanup error
-            }
         }
-    }, [isOpen, stream, cameraError, handleProcessCode, isInsideViewfinder])
+    }, [isOpen, stream, cameraError, handleProcessCode])
 
     const toggleTorch = async () => {
         if (!stream) return
