@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional
@@ -5,11 +6,27 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
+def validate_barcode_string(v: str | None) -> str | None:
+    if v is None:
+        return None
+    trimmed = v.strip()
+    if not trimmed:
+        return None
+    if len(trimmed) < 3 or len(trimmed) > 64:
+        raise ValueError("Barcode must be between 3 and 64 characters.")
+    if any(c.isspace() for c in trimmed):
+        raise ValueError("Barcode cannot contain whitespace.")
+    if not re.match(r"^[A-Za-z0-9\-_.+]+$", trimmed):
+        raise ValueError("Barcode contains invalid characters. Use alphanumeric characters, hyphens, or dots.")
+    return trimmed
+
+
 class ProductCreate(BaseModel):
     name: str = Field(min_length=1, max_length=255)
     price: Decimal = Field(gt=0, decimal_places=2)
     available_stock: int = Field(ge=0)
     category: str = Field(default="Coffee", max_length=50)
+    barcode: Optional[str] = Field(default=None, max_length=64)
 
     @field_validator("name")
     @classmethod
@@ -19,12 +36,18 @@ class ProductCreate(BaseModel):
             raise ValueError("Product name cannot be blank or only whitespace.")
         return trimmed
 
+    @field_validator("barcode")
+    @classmethod
+    def validate_barcode(cls, v: str | None) -> str | None:
+        return validate_barcode_string(v)
+
 
 class ProductUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=255)
     price: Decimal | None = Field(default=None, gt=0, decimal_places=2)
     available_stock: int | None = Field(default=None, ge=0)
     category: str | None = Field(default=None, max_length=50)
+    barcode: Optional[str] = Field(default=None, max_length=64)
     is_active: bool | None = None
     adjustment_reason: str | None = Field(default=None, max_length=100)
 
@@ -38,6 +61,11 @@ class ProductUpdate(BaseModel):
             return trimmed
         return v
 
+    @field_validator("barcode")
+    @classmethod
+    def validate_barcode(cls, v: str | None) -> str | None:
+        return validate_barcode_string(v)
+
 
 class ProductResponse(BaseModel):
     id: int
@@ -45,6 +73,7 @@ class ProductResponse(BaseModel):
     price: Decimal
     available_stock: int
     category: str = "Coffee"
+    barcode: Optional[str] = None
     is_active: bool
 
     model_config = ConfigDict(from_attributes=True)

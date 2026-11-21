@@ -28,6 +28,7 @@ import {
     removeCartItem,
     resumeCart,
     updateCartItemQuantity,
+    getProductByBarcode,
     type Cart as ApiCart,
     type CheckoutResponse,
     type Product as ApiProduct,
@@ -44,6 +45,9 @@ import {
     type CartItem,
 } from "../cart/CartPanel"
 import { ReceiptModal } from "../orders/ReceiptModal"
+import { BarcodeScannerModal } from "../common/BarcodeScannerModal"
+import { useBarcodeScanner } from "../../hooks/useBarcodeScanner"
+import { playScanSound } from "../../lib/sound"
 import { getCachedProducts, saveCachedProducts } from "../../lib/offlineStore"
 
 const CART_ID_KEY = "pos_cart_id"
@@ -58,6 +62,7 @@ function mapProduct(product: ApiProduct): Product {
         price: Number(product.price),
         stock: product.available_stock,
         category: product.category,
+        barcode: product.barcode,
     }
 }
 
@@ -155,6 +160,8 @@ export function POSPage() {
     const [cashTendered, setCashTendered] = useState<string>("")
     const [cardRefId, setCardRefId] = useState<string>("")
     const [showReceiptModal, setShowReceiptModal] = useState(false)
+    const [isBarcodeScannerOpen, setIsBarcodeScannerOpen] = useState(false)
+    const isScanningRef = useRef(false)
 
     // Stacked, non-overlapping toast notification system
     const [toasts, setToasts] = useState<ToastItemData[]>([])
@@ -411,82 +418,167 @@ export function POSPage() {
         })
     }, [products, search, stockFilter, categoryFilter])
 
-    const addToCart = async (productId: number) => {
-        const product = products.find((item) => item.id === productId)
+    const addToCart = useCallback(
+        async (productId: number) => {
+            const product = products.find((item) => item.id === productId)
 
-        if (!product || product.stock <= 0) {
-            return
-        }
-
-        if (
-            checkoutResponse &&
-            checkoutResponse.order.status === "Reserved"
-        ) {
-            addToast(
-                `Order #${checkoutResponse.order.id} is awaiting payment. Complete or cancel it before starting a new order.`,
-                "info",
-                5000,
-            )
-            return
-        }
-
-        if (cartId === null) {
-            return
-        }
-
-        try {
-            await addCartItem(cartId, productId, 1)
-        } catch (requestError) {
-            const message =
-                requestError instanceof Error
-                    ? requestError.message
-                    : "Couldn't add item to order."
-
-            if (message.includes("Cart is not active")) {
-                try {
-                    const freshCart = await createCart()
-                    setCartId(freshCart.id)
-                    setCartItems([])
-                    setCheckoutResponse(null)
-                    await addCartItem(freshCart.id, productId, 1)
-                } catch {
-                    addToast("Couldn't add item to order.", "error", 5000)
-                    return
-                }
-            } else {
-                addToast(message, "error", 5000)
+            if (!product || product.stock <= 0) {
                 return
             }
-        }
 
-        setCartItems((currentItems) => {
-            const existingItem = currentItems.find(
-                (item) => item.id === productId,
-            )
-
-            if (existingItem) {
-                return currentItems.map((item) =>
-                    item.id === productId
-                        ? { ...item, quantity: item.quantity + 1 }
-                        : item,
+            if (
+                checkoutResponse &&
+                checkoutResponse.order.status === "Reserved"
+            ) {
+                addToast(
+                    `Order #${checkoutResponse.order.id} is awaiting payment. Complete or cancel it before starting a new order.`,
+                    "info",
+                    5000,
                 )
+                return
             }
 
-            return [
-                ...currentItems,
-                {
-                    id: product.id,
-                    name: product.name,
-                    price: product.price,
-                    quantity: 1,
-                },
-            ]
-        })
+            if (cartId === null) {
+                return
+            }
 
-        if (window.matchMedia("(max-width: 1279px)").matches) {
-            setMobileCartOpen(true)
-        }
-    }
+            try {
+                await addCartItem(cartId, productId, 1)
+            } catch (requestError) {
+                const message =
+                    requestError instanceof Error
+                        ? requestError.message
+                        : "Couldn't add item to order."
+
+                if (message.includes("Cart is not active")) {
+                    try {
+                        const freshCart = await createCart()
+                        setCartId(freshCart.id)
+                        setCartItems([])
+                        setCheckoutResponse(null)
+                        await addCartItem(freshCart.id, productId, 1)
+                    } catch {
+                        addToast("Couldn't add item to order.", "error", 5000)
+                        return
+                    }
+                } else {
+                    addToast(message, "error", 5000)
+                    return
+                }
+            }
+
+            setCartItems((currentItems) => {
+                const existingItem = currentItems.find(
+                    (item) => item.id === productId,
+                )
+
+                if (existingItem) {
+                    return currentItems.map((item) =>
+                        item.id === productId
+                            ? { ...item, quantity: item.quantity + 1 }
+                            : item,
+                    )
+                }
+
+                return [
+                    ...currentItems,
+                    {
+                        id: product.id,
+                        name: product.name,
+                        price: product.price,
+                        quantity: 1,
+                    },
+                ]
+            })
+
+            if (window.matchMedia("(max-width: 1279px)").matches) {
+                setMobileCartOpen(true)
+            }
+        },
+        [products, checkoutResponse, cartId, addToast],
+    )
+
+    const handleBarcodeScan = useCallback(
+        async (scannedCode: string) => {
+            const cleaned = scannedCode.trim()
+            if (!cleaned || isScanningRef.current) return
+            isScanningRef.current = true
+
+            try {
+                // 1. Try finding in loaded products list
+                let matchedProduct = products.find(
+                    (p) => p.barcode && p.barcode.toLowerCase() === cleaned.toLowerCase(),
+                )
+
+                // 2. Query backend if not found in current memory list
+                if (!matchedProduct) {
+                    try {
+                        const apiProd = await getProductByBarcode(cleaned)
+                        if (apiProd && apiProd.is_active) {
+                            matchedProduct = mapProduct(apiProd)
+                        }
+                    } catch {
+                        // Not found on server
+                    }
+                }
+
+                if (!matchedProduct) {
+                    playScanSound("error")
+                    addToast(`No product found with barcode "${cleaned}".`, "error", 4500)
+                    return
+                }
+
+                if (matchedProduct.stock <= 0) {
+                    playScanSound("error")
+                    addToast(`"${matchedProduct.name}" is currently out of stock.`, "error", 4500)
+                    return
+                }
+
+                if (
+                    checkoutResponse &&
+                    checkoutResponse.order.status === "Reserved"
+                ) {
+                    playScanSound("error")
+                    addToast(
+                        `Order #${checkoutResponse.order.id} is awaiting payment. Complete or cancel it before scanning new items.`,
+                        "info",
+                        5000,
+                    )
+                    return
+                }
+
+                await addToCart(matchedProduct.id)
+                playScanSound("success")
+                addToast(
+                    `Scanned: ${matchedProduct.name} (${matchedProduct.barcode || cleaned})`,
+                    "success",
+                    3000,
+                )
+            } catch (scanErr) {
+                playScanSound("error")
+                addToast(
+                    scanErr instanceof Error
+                        ? scanErr.message
+                        : "Unable to process scanned barcode.",
+                    "error",
+                    4500,
+                )
+            } finally {
+                setTimeout(() => {
+                    isScanningRef.current = false
+                }, 350)
+            }
+        },
+        [products, checkoutResponse, addToCart, addToast],
+    )
+
+    // Keyboard-wedge physical USB / Bluetooth barcode scanner listener
+    useBarcodeScanner({
+        onScan: (barcode) => {
+            void handleBarcodeScan(barcode)
+        },
+        enabled: true,
+    })
 
     const increaseQuantity = async (productId: number) => {
         const item = cartItems.find(
@@ -998,6 +1090,7 @@ export function POSPage() {
                         onStockFilterChange={setStockFilter}
                         categoryFilter={categoryFilter}
                         onCategoryFilterChange={setCategoryFilter}
+                        onScanBarcodeClick={() => setIsBarcodeScannerOpen(true)}
                     />
 
                     {/* Register Settlement Terminal (When Order is Active/Settling) */}
@@ -1355,6 +1448,15 @@ export function POSPage() {
                 order={checkoutResponse?.order || null}
                 isOpen={showReceiptModal}
                 onClose={() => setShowReceiptModal(false)}
+            />
+
+            {/* Camera & Barcode Scanner Modal */}
+            <BarcodeScannerModal
+                isOpen={isBarcodeScannerOpen}
+                onClose={() => setIsBarcodeScannerOpen(false)}
+                onScan={(code) => void handleBarcodeScan(code)}
+                title="Scan Barcode into POS"
+                subtitle="Position barcode in camera viewfinder or type below."
             />
 
             <ToastStack toasts={toasts} onDismiss={removeToast} />

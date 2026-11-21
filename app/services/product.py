@@ -18,11 +18,24 @@ class ProductService:
 
     def create_product(self, data: ProductCreate, user_id: int | None = None):
         cleaned_name = data.name.strip()
+        cleaned_barcode = data.barcode.strip() if data.barcode else None
+
+        if cleaned_barcode:
+            existing_barcode = self.db.scalars(
+                select(Product).where(Product.barcode == cleaned_barcode)
+            ).first()
+            if existing_barcode:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=f"Barcode '{cleaned_barcode}' is already assigned to product '{existing_barcode.name}'.",
+                )
+
         product = self.repository.create(
             name=cleaned_name,
             price=data.price,
             available_stock=data.available_stock,
             category=data.category,
+            barcode=cleaned_barcode,
         )
 
         if data.available_stock > 0:
@@ -63,6 +76,21 @@ class ProductService:
 
         return product
 
+    def get_product_by_barcode(self, barcode: str) -> Product:
+        cleaned = barcode.strip()
+        if not cleaned:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Barcode cannot be blank.",
+            )
+        product = self.repository.get_by_barcode(cleaned)
+        if product is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Product with barcode '{cleaned}' not found.",
+            )
+        return product
+
     def get_products(self):
         return self.repository.get_all()
 
@@ -78,6 +106,23 @@ class ProductService:
 
         if "name" in update_data and update_data["name"] is not None:
             update_data["name"] = update_data["name"].strip()
+
+        if "barcode" in update_data:
+            raw_barcode = update_data["barcode"]
+            cleaned_barcode = raw_barcode.strip() if raw_barcode else None
+            if cleaned_barcode:
+                existing_barcode = self.db.scalars(
+                    select(Product).where(
+                        Product.barcode == cleaned_barcode,
+                        Product.id != product_id,
+                    )
+                ).first()
+                if existing_barcode:
+                    raise HTTPException(
+                        status_code=status.HTTP_409_CONFLICT,
+                        detail=f"Barcode '{cleaned_barcode}' is already assigned to product '{existing_barcode.name}'.",
+                    )
+            update_data["barcode"] = cleaned_barcode
 
         adjustment_reason = update_data.pop("adjustment_reason", None)
 

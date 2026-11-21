@@ -15,6 +15,10 @@ class ProductRepository:
         statement = select(Product).where(Product.name.ilike(name))
         return self.db.scalars(statement).first()
 
+    def get_by_barcode(self, barcode: str) -> Product | None:
+        statement = select(Product).where(Product.barcode == barcode.strip())
+        return self.db.scalars(statement).first()
+
     def get_all(self) -> list[Product]:
         statement = select(Product).order_by(Product.id)
         return list(self.db.scalars(statement).all())
@@ -25,12 +29,14 @@ class ProductRepository:
             price,
             available_stock: int,
             category: str = "Coffee",
+            barcode: str | None = None,
     ) -> Product:
         product = Product(
             name=name,
             price=price,
             available_stock=available_stock,
             category=category,
+            barcode=barcode.strip() if barcode else None,
         )
 
         self.db.add(product)

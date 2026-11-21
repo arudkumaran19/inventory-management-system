@@ -32,6 +32,13 @@ class Product(Base):
         nullable=False,
         default="Coffee",
     )
+    barcode: Mapped[str | None] = mapped_column(
+        String(64),
+        unique=True,
+        index=True,
+        nullable=True,
+        default=None,
+    )
     is_active: Mapped[bool] = mapped_column(
         nullable=False,
         default=True,

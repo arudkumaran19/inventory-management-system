@@ -23,7 +23,11 @@ class OrderRepository:
 
         return self.db.scalars(statement).first()
 
-    def get_all(self) -> list[Order]:
+    def get_all(
+        self,
+        user_id: int | None = None,
+        status: str | None = None,
+    ) -> list[Order]:
         statement = (
             select(Order)
             .order_by(Order.id.desc())
@@ -34,6 +38,12 @@ class OrderRepository:
                 selectinload(Order.user),
             )
         )
+
+        if user_id is not None:
+            statement = statement.where(Order.user_id == user_id)
+
+        if status is not None and status.strip().lower() != "all":
+            statement = statement.where(Order.status.ilike(status.strip()))
 
         return list(self.db.scalars(statement).all())
 

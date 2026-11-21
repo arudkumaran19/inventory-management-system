@@ -12,6 +12,7 @@ export type Product = {
     price: string
     available_stock: number
     category: string
+    barcode?: string | null
     is_active: boolean
 }
 
@@ -20,6 +21,7 @@ export type ProductCreate = {
     price: number
     available_stock: number
     category?: string
+    barcode?: string | null
 }
 
 export type ProductUpdate = {
@@ -27,6 +29,7 @@ export type ProductUpdate = {
     price?: number
     available_stock?: number
     category?: string
+    barcode?: string | null
     is_active?: boolean
     adjustment_reason?: string
 }
@@ -257,6 +260,10 @@ export async function getProduct(productId: number): Promise<Product> {
     return request<Product>(`/products/${productId}`)
 }
 
+export async function getProductByBarcode(barcode: string): Promise<Product> {
+    return request<Product>(`/products/by-barcode/${encodeURIComponent(barcode.trim())}`)
+}
+
 export async function createProduct(
     product: ProductCreate,
 ): Promise<Product> {
@@ -362,8 +369,23 @@ export async function processPayment(
     )
 }
 
-export async function getOrders(): Promise<Order[]> {
-    return request<Order[]>("/orders")
+export async function getOrders(
+    userId?: number | null,
+    status?: string | null,
+    search?: string | null,
+): Promise<Order[]> {
+    const params = new URLSearchParams()
+    if (userId !== undefined && userId !== null) {
+        params.set("user_id", String(userId))
+    }
+    if (status && status !== "all") {
+        params.set("status", status)
+    }
+    if (search && search.trim()) {
+        params.set("search", search.trim())
+    }
+    const query = params.toString()
+    return request<Order[]>(`/orders${query ? `?${query}` : ""}`)
 }
 
 export async function getOrder(orderId: number): Promise<Order> {
@@ -436,12 +458,24 @@ export async function closeShift(
     })
 }
 
-export async function getOrderAnalytics(): Promise<OrderAnalytics> {
-    return request<OrderAnalytics>("/orders/analytics/summary")
+export async function getOrderAnalytics(userId?: number | null): Promise<OrderAnalytics> {
+    const query = userId !== undefined && userId !== null ? `?user_id=${userId}` : ""
+    return request<OrderAnalytics>(`/orders/analytics/summary${query}`)
 }
 
-export function getOrderExportCsvUrl(): string {
-    return `${API_BASE_URL}/orders/export/csv`
+export function getOrderExportCsvUrl(
+    userId?: number | null,
+    status?: string | null,
+): string {
+    const params = new URLSearchParams()
+    if (userId !== undefined && userId !== null) {
+        params.set("user_id", String(userId))
+    }
+    if (status && status !== "all") {
+        params.set("status", status)
+    }
+    const query = params.toString()
+    return `${API_BASE_URL}/orders/export/csv${query ? `?${query}` : ""}`
 }
 
 export type Location = {

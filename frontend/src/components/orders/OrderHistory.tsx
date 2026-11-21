@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react"
 import { Toast } from "../ui/Toast"
 import {
     CheckCircle2,
+    ChevronDown,
     ChevronRight,
     ClipboardList,
     Clock3,
@@ -13,16 +14,20 @@ import {
     RefreshCw,
     Search,
     User,
+    UserCheck,
     XCircle,
 } from "lucide-react"
 
+import { useAuth } from "../../context/AuthContext"
 import {
     cancelOrder,
     getOrderExportCsvUrl,
     getOrders,
+    getUsers,
     type HandledBy,
     type Order,
 } from "../../lib/api"
+import type { User as ApiUser } from "../../types/auth"
 import { ReceiptModal } from "./ReceiptModal"
 
 type OrderHistoryProps = {
@@ -122,12 +127,15 @@ function getOrderTimestamp(
 export function OrderHistory({
     onInventoryRefresh,
 }: OrderHistoryProps) {
+    const { user, isManager } = useAuth()
     const [orders, setOrders] = useState<Order[]>([])
     const [selectedOrderId, setSelectedOrderId] =
         useState<number | null>(null)
 
     const [statusFilter, setStatusFilter] = useState<string>("all")
     const [searchQuery, setSearchQuery] = useState("")
+    const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null)
+    const [employees, setEmployees] = useState<ApiUser[]>([])
 
     const [loading, setLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
@@ -140,7 +148,25 @@ export function OrderHistory({
     const [receiptModalOrder, setReceiptModalOrder] = useState<Order | null>(null)
     const [showReceiptModal, setShowReceiptModal] = useState(false)
 
-    const loadOrders = async (isRefresh = false) => {
+    // Load active staff members for manager employee filter
+    useEffect(() => {
+        if (!isManager) return
+        let ignore = false
+        getUsers()
+            .then((users) => {
+                if (!ignore) {
+                    setEmployees(users.filter((u) => u.is_active))
+                }
+            })
+            .catch(() => {
+                // Ignore transient errors
+            })
+        return () => {
+            ignore = true
+        }
+    }, [isManager])
+
+    const loadOrders = async (isRefresh = false, empId = selectedEmployeeId) => {
         try {
             if (isRefresh) {
                 setRefreshing(true)
@@ -149,7 +175,7 @@ export function OrderHistory({
             }
 
             setError(null)
-            const response = await getOrders()
+            const response = await getOrders(empId, statusFilter)
             setOrders(response)
 
             if (
@@ -174,7 +200,7 @@ export function OrderHistory({
         let ignore = false
 
         const fetchLatest = (isInitial = false) => {
-            getOrders()
+            getOrders(selectedEmployeeId, statusFilter)
                 .then((response) => {
                     if (!ignore) {
                         setOrders(response)
@@ -209,7 +235,7 @@ export function OrderHistory({
             clearInterval(intervalId)
             window.removeEventListener("focus", onFocus)
         }
-    }, [])
+    }, [selectedEmployeeId, statusFilter])
 
     const selectedOrder = useMemo(
         () => orders.find((order) => order.id === selectedOrderId) ?? null,
@@ -321,7 +347,7 @@ export function OrderHistory({
 
                     <div className="flex items-center gap-2">
                         <a
-                            href={getOrderExportCsvUrl()}
+                            href={getOrderExportCsvUrl(selectedEmployeeId, statusFilter)}
                             download="artisan_cafe_orders.csv"
                             className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-[#E8E3DB] bg-white px-3.5 text-xs font-bold text-[#78350F] shadow-2xs hover:bg-[#FEF8EC] active:scale-95 transition-all"
                         >
@@ -393,20 +419,63 @@ export function OrderHistory({
                 </div>
 
                 {/* Filter and Search Bar */}
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="relative min-w-0 flex-1 sm:max-w-xs">
-                        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#A8A29E]" />
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Filter by order # or product..."
-                            aria-label="Filter orders"
-                            className="h-9.5 w-full rounded-xl border border-[#E8E3DB] bg-white pl-9 pr-3 text-xs text-[#1C1917] outline-none placeholder:text-[#A8A29E] focus:border-[#78350F] focus:ring-2 focus:ring-[#78350F]/15 shadow-2xs"
-                        />
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 flex-1 min-w-0">
+                        <div className="relative min-w-0 flex-1 sm:max-w-xs">
+                            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#A8A29E]" />
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Filter by order # or product..."
+                                aria-label="Filter orders"
+                                className="h-9.5 w-full rounded-xl border border-[#E8E3DB] bg-white pl-9 pr-3 text-xs text-[#1C1917] outline-none placeholder:text-[#A8A29E] focus:border-[#78350F] focus:ring-2 focus:ring-[#78350F]/15 shadow-2xs"
+                            />
+                        </div>
+
+                        {/* Employee filter dropdown */}
+                        {isManager ? (
+                            <div className="flex items-center gap-1.5 shrink-0">
+                                <div className="relative flex items-center">
+                                    <UserCheck className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-[#78350F]" />
+                                    <select
+                                        id="employee-filter"
+                                        aria-label="Filter by employee"
+                                        value={selectedEmployeeId ?? ""}
+                                        onChange={(e) => {
+                                            const val = e.target.value
+                                            setSelectedEmployeeId(val ? Number(val) : null)
+                                        }}
+                                        className="h-9.5 rounded-xl border border-[#E8E3DB] bg-white pl-8 pr-8 text-xs font-semibold text-[#1C1917] shadow-2xs outline-none transition hover:border-[#D6CEC4] focus:border-[#78350F] focus:ring-2 focus:ring-[#78350F]/15 cursor-pointer appearance-none"
+                                    >
+                                        <option value="">All Employees</option>
+                                        {employees.map((emp) => (
+                                            <option key={emp.id} value={emp.id}>
+                                                {emp.display_name} ({emp.role.charAt(0).toUpperCase() + emp.role.slice(1)})
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 text-[#A8A29E]" />
+                                </div>
+                                {selectedEmployeeId !== null && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedEmployeeId(null)}
+                                        className="text-[11px] font-semibold text-[#78350F] hover:underline cursor-pointer px-1"
+                                    >
+                                        Reset
+                                    </button>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="inline-flex items-center gap-1.5 rounded-xl border border-[#E8E3DB] bg-white px-3 py-2 text-xs font-semibold text-[#78716C] shadow-2xs shrink-0">
+                                <User className="size-3.5 text-[#78350F]" />
+                                <span>My Sales ({user?.display_name || "Cashier"})</span>
+                            </div>
+                        )}
                     </div>
 
-                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 shrink-0">
                         {[
                             { id: "all", label: "All" },
                             { id: "Reserved", label: "Reserved" },

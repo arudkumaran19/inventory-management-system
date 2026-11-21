@@ -60,8 +60,12 @@ class OrderService:
         order.status = new_status
 
 
-    def get_orders(self) -> list[Order]:
-        return self.orders.get_all()
+    def get_orders(
+        self,
+        user_id: int | None = None,
+        status: str | None = None,
+    ) -> list[Order]:
+        return self.orders.get_all(user_id=user_id, status=status)
 
     def get_order(self, order_id: int) -> Order:
         order = self.orders.get_by_id(order_id)

@@ -58,6 +58,19 @@ def get_inventory_logs(
 
 
 @router.get(
+    "/by-barcode/{barcode}",
+    response_model=ProductResponse,
+)
+def get_product_by_barcode(
+    barcode: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    service = ProductService(db)
+    return service.get_product_by_barcode(barcode)
+
+
+@router.get(
     "/{product_id}",
     response_model=ProductResponse,
 )

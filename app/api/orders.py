@@ -2,7 +2,7 @@ import csv
 import io
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, require_role
@@ -24,11 +24,21 @@ router = APIRouter(
     "/analytics/summary",
 )
 def get_order_analytics(
+    user_id: int | None = Query(None, description="Filter summary by employee ID"),
     current_user: User = Depends(require_role(UserRole.MANAGER)),
     db: Session = Depends(get_db),
 ):
     service = OrderService(db)
-    orders = service.get_orders()
+
+    if user_id is not None:
+        employee = db.get(User, user_id)
+        if employee is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Employee with ID {user_id} not found.",
+            )
+
+    orders = service.get_orders(user_id=user_id)
 
     gross_sales = Decimal("0.00")
     net_sales = Decimal("0.00")
@@ -91,11 +101,22 @@ def get_order_analytics(
     "/export/csv",
 )
 def export_orders_csv(
+    user_id: int | None = Query(None, description="Filter export by employee ID"),
+    status_filter: str | None = Query(None, alias="status", description="Filter export by status"),
     current_user: User = Depends(require_role(UserRole.MANAGER)),
     db: Session = Depends(get_db),
 ):
     service = OrderService(db)
-    orders = service.get_orders()
+
+    if user_id is not None:
+        employee = db.get(User, user_id)
+        if employee is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Employee with ID {user_id} not found.",
+            )
+
+    orders = service.get_orders(user_id=user_id, status=status_filter)
 
     output = io.StringIO()
     writer = csv.writer(output)
@@ -151,11 +172,46 @@ def export_orders_csv(
     response_model=list[OrderResponse],
 )
 def get_orders(
+    user_id: int | None = Query(None, description="Filter by employee/user ID"),
+    status_filter: str | None = Query(None, alias="status", description="Filter by order status"),
+    search: str | None = Query(None, description="Search term for order ID or product"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     service = OrderService(db)
-    return service.get_orders()
+
+    # Enforce role-based access control:
+    # Managers can view all employees or filter by a specific employee.
+    # Cashiers can only view their own sales. If a cashier tries to query another employee's sales, raise 403 Forbidden.
+    if current_user.role == UserRole.CASHIER.value:
+        if user_id is not None and user_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Cashiers cannot view sales data for other employees.",
+            )
+        effective_user_id = current_user.id
+    else:
+        if user_id is not None:
+            employee = db.get(User, user_id)
+            if employee is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Employee with ID {user_id} not found.",
+                )
+            effective_user_id = user_id
+        else:
+            effective_user_id = None
+
+    orders = service.get_orders(user_id=effective_user_id, status=status_filter)
+
+    if search and search.strip():
+        q = search.strip().lower()
+        orders = [
+            o for o in orders
+            if q in str(o.id) or any(q in item.product_name.lower() for item in o.items)
+        ]
+
+    return orders
 
 
 @router.get(

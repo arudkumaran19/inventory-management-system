@@ -3,7 +3,9 @@ import { Toast } from "../ui/Toast"
 import {
     AlertTriangle,
     Archive,
+    Barcode,
     Boxes,
+    Camera,
     Coffee,
     Edit3,
     History,
@@ -11,17 +13,19 @@ import {
     Plus,
     RefreshCw,
     Search,
-    ShieldCheck,
     Sparkles,
     Trash2,
     X,
 } from "lucide-react"
 import { IngredientsModal } from "./IngredientsModal"
-import { AuditTrailModal } from "../audit/AuditTrailModal"
+import { BarcodeScannerModal } from "../common/BarcodeScannerModal"
+import { useBarcodeScanner } from "../../hooks/useBarcodeScanner"
+import { playScanSound } from "../../lib/sound"
 import {
     createProduct,
     deleteProduct,
     getInventoryLogs,
+    getProductByBarcode,
     getProducts,
     updateProduct,
     type InventoryLog,
@@ -33,6 +37,7 @@ type ProductForm = {
     price: string
     available_stock: string
     category: string
+    barcode: string
     adjustment_reason: string
 }
 
@@ -41,6 +46,7 @@ const emptyForm: ProductForm = {
     price: "",
     available_stock: "",
     category: "Coffee",
+    barcode: "",
     adjustment_reason: "Supplier Delivery",
 }
 
@@ -95,7 +101,54 @@ export function InventoryView() {
     const [isLogsModalOpen, setIsLogsModalOpen] = useState(false)
     const [logsLoading, setLogsLoading] = useState(false)
     const [isIngredientsModalOpen, setIsIngredientsModalOpen] = useState(false)
-    const [isAuditTrailModalOpen, setIsAuditTrailModalOpen] = useState(false)
+    const [isInventoryScannerOpen, setIsInventoryScannerOpen] = useState(false)
+    const [isCameraScanningForm, setIsCameraScanningForm] = useState(false)
+
+    async function handleBarcodeLookup(scannedCode: string) {
+        const cleaned = scannedCode.trim()
+        if (!cleaned) return
+
+        // If form modal is open, fill the form barcode field
+        if (isFormOpen) {
+            setForm((current) => ({
+                ...current,
+                barcode: cleaned,
+            }))
+            playScanSound("success")
+            setSuccessMessage(`Scanned barcode: ${cleaned}`)
+            return
+        }
+
+        // Look up product in products list or server
+        let matched = products.find(
+            (p) => p.barcode && p.barcode.toLowerCase() === cleaned.toLowerCase(),
+        )
+
+        if (!matched) {
+            try {
+                matched = await getProductByBarcode(cleaned)
+            } catch {
+                // Not found
+            }
+        }
+
+        if (matched) {
+            playScanSound("success")
+            setSuccessMessage(`Identified "${matched.name}". Ready for stock adjustment.`)
+            openEditForm(matched)
+        } else {
+            playScanSound("error")
+            setError(`No product found with barcode "${cleaned}".`)
+        }
+    }
+
+    // Hardware USB/Bluetooth barcode scanner listener
+    useBarcodeScanner({
+        onScan: (barcode) => {
+            void handleBarcodeLookup(barcode)
+        },
+        enabled: true,
+    })
 
     async function loadLogs() {
         try {
@@ -239,6 +292,7 @@ export function InventoryView() {
             price: product.price,
             available_stock: String(product.available_stock),
             category: product.category || "Coffee",
+            barcode: product.barcode || "",
             adjustment_reason: "Inventory Recount",
         })
 
@@ -271,6 +325,7 @@ export function InventoryView() {
         const name = form.name.trim()
         const price = Number(form.price)
         const stock = Number(form.available_stock)
+        const barcode = form.barcode.trim()
 
         if (!name) {
             return "Enter a product name."
@@ -282,6 +337,15 @@ export function InventoryView() {
 
         if (!Number.isInteger(stock) || stock < 0) {
             return "Enter a whole number for stock."
+        }
+
+        if (barcode) {
+            if (barcode.length < 3 || barcode.length > 64) {
+                return "Barcode must be between 3 and 64 characters."
+            }
+            if (/\s/.test(barcode)) {
+                return "Barcode cannot contain whitespace."
+            }
         }
 
         return null
@@ -310,6 +374,7 @@ export function InventoryView() {
                 price: Number(form.price),
                 available_stock: Number(form.available_stock),
                 category: form.category || "Coffee",
+                barcode: form.barcode.trim() || undefined,
                 adjustment_reason: form.adjustment_reason || undefined,
             }
 
@@ -464,15 +529,6 @@ export function InventoryView() {
 
                         <button
                             type="button"
-                            onClick={() => setIsAuditTrailModalOpen(true)}
-                            className="inline-flex items-center gap-2 rounded-xl border border-[#C8E3CE] bg-[#EDF6EE] px-3.5 py-2.5 text-xs font-semibold text-[#215A36] shadow-xs hover:bg-[#E2F0E4] transition-all cursor-pointer"
-                        >
-                            <ShieldCheck className="size-3.5 text-[#215A36]" />
-                            Immutable Audit Trail
-                        </button>
-
-                        <button
-                            type="button"
                             onClick={() => {
                                 void loadLogs()
                                 setIsLogsModalOpen(true)
@@ -481,6 +537,15 @@ export function InventoryView() {
                         >
                             <History className="size-3.5 text-[#78350F]" />
                             Stock Changes
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => setIsInventoryScannerOpen(true)}
+                            className="inline-flex items-center gap-2 rounded-xl border border-[#E8E3DB] bg-white px-3.5 py-2.5 text-xs font-semibold text-[#78350F] shadow-xs hover:bg-[#FEF8EC] hover:border-[#F2DEBA] transition-all cursor-pointer"
+                        >
+                            <Barcode className="size-3.5 text-[#78350F]" />
+                            Scan Barcode
                         </button>
 
                         <button
@@ -770,10 +835,19 @@ export function InventoryView() {
                                                             <p className="text-sm font-semibold text-[#1C1917] group-hover:text-[#78350F] transition-colors">
                                                                 {product.name}
                                                             </p>
-                                                            <div className="flex items-center gap-1.5 mt-0.5">
+                                                            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                                                                 <span className="text-[11px] font-medium text-[#A8A29E] tnum">
                                                                     ID #{product.id}
                                                                 </span>
+                                                                {product.barcode && (
+                                                                    <>
+                                                                        <span className="text-[10px] text-[#D6CEC4]">•</span>
+                                                                        <span className="inline-flex items-center gap-1 rounded-md bg-[#FAF8F5] px-1.5 py-0.5 text-[10px] font-mono font-semibold text-[#78716C] border border-[#E8E3DB]" title={`Barcode: ${product.barcode}`}>
+                                                                            <Barcode className="size-2.5 text-[#78350F]" />
+                                                                            {product.barcode}
+                                                                        </span>
+                                                                    </>
+                                                                )}
                                                                 {product.category && (
                                                                     <>
                                                                         <span className="text-[10px] text-[#D6CEC4]">•</span>
@@ -1113,6 +1187,46 @@ export function InventoryView() {
                                 )}
                             </div>
 
+                            {/* Barcode / SKU Input */}
+                            <div>
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <label
+                                        htmlFor="product-barcode"
+                                        className="block text-xs font-bold text-[#1C1917] uppercase tracking-wider"
+                                    >
+                                        Barcode / SKU
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsCameraScanningForm(true)}
+                                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#78350F] hover:underline cursor-pointer"
+                                    >
+                                        <Camera className="size-3 text-[#78350F]" />
+                                        Scan with Camera
+                                    </button>
+                                </div>
+                                <div className="relative">
+                                    <Barcode className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-[#A8A29E]" />
+                                    <input
+                                        id="product-barcode"
+                                        type="text"
+                                        value={form.barcode}
+                                        onChange={(event) =>
+                                            updateForm(
+                                                "barcode",
+                                                event.target.value,
+                                            )
+                                        }
+                                        placeholder="e.g. 012345678905, CAFE-001..."
+                                        disabled={saving}
+                                        className="w-full rounded-xl border border-[#E8E3DB] bg-[#FAF8F5]/60 py-2.5 pl-10 pr-3.5 text-sm font-mono text-[#1C1917] outline-none transition placeholder:text-[#A8A29E] focus:bg-white focus:border-[#78350F] focus:ring-2 focus:ring-[#78350F]/20 disabled:bg-[#F5F2EB]"
+                                    />
+                                </div>
+                                <p className="mt-1 text-[11px] text-[#78716C]">
+                                    Supports physical USB/Bluetooth scanners, EAN-13, UPC-A, Code 128. Leading zeros are preserved.
+                                </p>
+                            </div>
+
                             <div className="flex justify-end gap-2.5 border-t border-[#E8E3DB] pt-5">
                                 <button
                                     type="button"
@@ -1260,10 +1374,25 @@ export function InventoryView() {
                 onClose={() => setIsIngredientsModalOpen(false)}
             />
 
-            {/* Cryptographic Audit Trail Modal */}
-            <AuditTrailModal
-                isOpen={isAuditTrailModalOpen}
-                onClose={() => setIsAuditTrailModalOpen(false)}
+            {/* Quick Barcode Scanner Modal for Inventory */}
+            <BarcodeScannerModal
+                isOpen={isInventoryScannerOpen}
+                onClose={() => setIsInventoryScannerOpen(false)}
+                onScan={(code) => void handleBarcodeLookup(code)}
+                title="Scan Product to Identify & Restock"
+                subtitle="Scan a barcode with the camera or USB scanner to locate the item."
+            />
+
+            {/* Camera Scanner for Product Add/Edit Form */}
+            <BarcodeScannerModal
+                isOpen={isCameraScanningForm}
+                onClose={() => setIsCameraScanningForm(false)}
+                onScan={(code) => {
+                    updateForm("barcode", code)
+                    setIsCameraScanningForm(false)
+                }}
+                title="Scan Barcode for Product"
+                subtitle="Position barcode to automatically fill the field."
             />
 
             {/* Error & Success Toasts */}
