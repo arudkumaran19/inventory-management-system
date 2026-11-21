@@ -1,3 +1,4 @@
+import re
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -84,6 +85,12 @@ class ProductService:
                 detail="Barcode cannot be blank.",
             )
         product = self.repository.get_by_barcode(cleaned)
+        if product is None:
+            # Also try stripped spaces if it was scanned or searched with spaces
+            no_spaces = re.sub(r"\s+", "", cleaned)
+            if no_spaces != cleaned:
+                product = self.repository.get_by_barcode(no_spaces)
+
         if product is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

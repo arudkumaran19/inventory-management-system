@@ -108,27 +108,39 @@ export function InventoryView() {
         const cleaned = scannedCode.trim()
         if (!cleaned) return
 
+        // Normalize if digits with spaces (e.g. retail box "0 12345 67890 5")
+        const noSpaces = cleaned.replace(/\s+/g, "")
+        const searchCode =
+            /^\d+$/.test(noSpaces) && noSpaces.length >= 3 ? noSpaces : cleaned
+
         // If form modal is open, fill the form barcode field
         if (isFormOpen) {
             setForm((current) => ({
                 ...current,
-                barcode: cleaned,
+                barcode: searchCode,
             }))
             playScanSound("success")
-            setSuccessMessage(`Scanned barcode: ${cleaned}`)
+            setSuccessMessage(`Scanned barcode: ${searchCode}`)
             return
         }
 
         // Look up product in products list or server
         let matched = products.find(
-            (p) => p.barcode && p.barcode.toLowerCase() === cleaned.toLowerCase(),
+            (p) =>
+                p.barcode &&
+                (p.barcode.toLowerCase() === cleaned.toLowerCase() ||
+                    p.barcode.toLowerCase() === searchCode.toLowerCase()),
         )
 
         if (!matched) {
             try {
-                matched = await getProductByBarcode(cleaned)
+                matched = await getProductByBarcode(searchCode)
             } catch {
-                // Not found
+                try {
+                    matched = await getProductByBarcode(cleaned)
+                } catch {
+                    // Not found
+                }
             }
         }
 
@@ -223,11 +235,15 @@ export function InventoryView() {
 
     const filteredProducts = useMemo(() => {
         const query = search.trim().toLowerCase()
+        const queryNoSpaces = query.replace(/\s+/g, "")
 
         return products.filter((product) => {
             const matchesSearch =
                 !query ||
-                product.name.toLowerCase().includes(query)
+                product.name.toLowerCase().includes(query) ||
+                (product.barcode &&
+                    (product.barcode.toLowerCase().includes(query) ||
+                        product.barcode.toLowerCase().includes(queryNoSpaces)))
 
             const matchesStatus =
                 statusFilter === "all"
@@ -340,11 +356,8 @@ export function InventoryView() {
         }
 
         if (barcode) {
-            if (barcode.length < 3 || barcode.length > 64) {
-                return "Barcode must be between 3 and 64 characters."
-            }
-            if (/\s/.test(barcode)) {
-                return "Barcode cannot contain whitespace."
+            if (barcode.length < 1 || barcode.length > 64) {
+                return "Barcode must be between 1 and 64 characters."
             }
         }
 
@@ -369,12 +382,19 @@ export function InventoryView() {
         setSuccessMessage("")
 
         try {
+            const rawBarcode = form.barcode.trim()
+            const digitsNoSpaces = rawBarcode.replace(/\s+/g, "")
+            const cleanBarcode =
+                /^\d+$/.test(digitsNoSpaces) && digitsNoSpaces.length >= 3
+                    ? digitsNoSpaces
+                    : rawBarcode
+
             const payload = {
                 name: form.name.trim(),
                 price: Number(form.price),
                 available_stock: Number(form.available_stock),
                 category: form.category || "Coffee",
-                barcode: form.barcode.trim() || undefined,
+                barcode: cleanBarcode || undefined,
                 adjustment_reason: form.adjustment_reason || undefined,
             }
 

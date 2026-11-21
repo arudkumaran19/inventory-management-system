@@ -382,11 +382,15 @@ export function POSPage() {
 
     const filteredProducts = useMemo(() => {
         const normalizedSearch = search.trim().toLowerCase()
+        const noSpacesSearch = normalizedSearch.replace(/\s+/g, "")
 
         return products.filter((product) => {
             const matchesSearch =
                 !normalizedSearch ||
-                product.name.toLowerCase().includes(normalizedSearch)
+                product.name.toLowerCase().includes(normalizedSearch) ||
+                (product.barcode &&
+                    (product.barcode.toLowerCase().includes(normalizedSearch) ||
+                        product.barcode.toLowerCase().includes(noSpacesSearch)))
 
             const matchesStock =
                 stockFilter === "all"
@@ -505,20 +509,34 @@ export function POSPage() {
             isScanningRef.current = true
 
             try {
+                const noSpaces = cleaned.replace(/\s+/g, "")
+                const searchCode =
+                    /^\d+$/.test(noSpaces) && noSpaces.length >= 3 ? noSpaces : cleaned
+
                 // 1. Try finding in loaded products list
                 let matchedProduct = products.find(
-                    (p) => p.barcode && p.barcode.toLowerCase() === cleaned.toLowerCase(),
+                    (p) =>
+                        p.barcode &&
+                        (p.barcode.toLowerCase() === cleaned.toLowerCase() ||
+                            p.barcode.toLowerCase() === searchCode.toLowerCase()),
                 )
 
                 // 2. Query backend if not found in current memory list
                 if (!matchedProduct) {
                     try {
-                        const apiProd = await getProductByBarcode(cleaned)
+                        const apiProd = await getProductByBarcode(searchCode)
                         if (apiProd && apiProd.is_active) {
                             matchedProduct = mapProduct(apiProd)
                         }
                     } catch {
-                        // Not found on server
+                        try {
+                            const apiProd = await getProductByBarcode(cleaned)
+                            if (apiProd && apiProd.is_active) {
+                                matchedProduct = mapProduct(apiProd)
+                            }
+                        } catch {
+                            // Not found on server
+                        }
                     }
                 }
 

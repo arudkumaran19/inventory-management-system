@@ -104,23 +104,60 @@ def test_duplicate_barcode_rejected_on_creation():
     assert f"Barcode '{barcode_val}' is already assigned" in res2.json()["detail"]
 
 
-def test_invalid_barcode_format_validation():
+def test_barcode_normalization_and_validation():
     get_or_create_test_users()
     mgr_client, _ = _make_client(MANAGER_EMAIL, MANAGER_PASS)
 
-    # Contains space
-    res1 = mgr_client.post(
+    # 1. Retail barcode entered with spaces (as printed on product packages) is normalized to contiguous digits
+    part1 = random.randint(10000, 99999)
+    part2 = random.randint(10000, 99999)
+    res_spaced = mgr_client.post(
         "/products",
-        json={"name": f"Bad Barcode 1 {uuid.uuid4().hex[:6]}", "price": 2.00, "available_stock": 5, "barcode": "123 456"},
+        json={
+            "name": f"Spaced UPC Item {uuid.uuid4().hex[:6]}",
+            "price": 2.50,
+            "available_stock": 10,
+            "barcode": f"0 {part1} {part2} 5",
+        },
     )
-    assert res1.status_code == 422
+    assert res_spaced.status_code == 201, res_spaced.text
+    assert res_spaced.json()["barcode"] == f"0{part1}{part2}5"
 
-    # Too short (< 3 chars)
-    res2 = mgr_client.post(
+    # 2. Barcode with slash and hyphen accepted
+    res_punct = mgr_client.post(
         "/products",
-        json={"name": f"Bad Barcode 2 {uuid.uuid4().hex[:6]}", "price": 2.00, "available_stock": 5, "barcode": "12"},
+        json={
+            "name": f"Punctuation Barcode {uuid.uuid4().hex[:6]}",
+            "price": 3.00,
+            "available_stock": 10,
+            "barcode": f"CAFE/LOC-{uuid.uuid4().hex[:4]}",
+        },
     )
-    assert res2.status_code == 422
+    assert res_punct.status_code == 201, res_punct.text
+
+    # 3. Exceeds max length (> 64 characters) rejected
+    res_long = mgr_client.post(
+        "/products",
+        json={
+            "name": f"Long Barcode {uuid.uuid4().hex[:6]}",
+            "price": 2.00,
+            "available_stock": 5,
+            "barcode": "X" * 65,
+        },
+    )
+    assert res_long.status_code == 422
+
+    # 4. Control characters rejected
+    res_ctrl = mgr_client.post(
+        "/products",
+        json={
+            "name": f"Bad Barcode {uuid.uuid4().hex[:6]}",
+            "price": 2.00,
+            "available_stock": 5,
+            "barcode": "ABC\x00DEF",
+        },
+    )
+    assert res_ctrl.status_code == 422
 
 
 def test_barcode_lookup_endpoint():

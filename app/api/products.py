@@ -58,7 +58,7 @@ def get_inventory_logs(
 
 
 @router.get(
-    "/by-barcode/{barcode}",
+    "/by-barcode/{barcode:path}",
     response_model=ProductResponse,
 )
 def get_product_by_barcode(

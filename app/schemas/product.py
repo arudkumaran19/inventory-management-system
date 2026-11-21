@@ -12,12 +12,22 @@ def validate_barcode_string(v: str | None) -> str | None:
     trimmed = v.strip()
     if not trimmed:
         return None
-    if len(trimmed) < 3 or len(trimmed) > 64:
-        raise ValueError("Barcode must be between 3 and 64 characters.")
-    if any(c.isspace() for c in trimmed):
-        raise ValueError("Barcode cannot contain whitespace.")
-    if not re.match(r"^[A-Za-z0-9\-_.+]+$", trimmed):
-        raise ValueError("Barcode contains invalid characters. Use alphanumeric characters, hyphens, or dots.")
+
+    # If the user entered digits separated by spaces (as printed on retail product packaging,
+    # e.g. "0 12345 67890 5" or "8 901030 384592"), normalize by removing internal spaces
+    # so it matches the raw contiguous digits produced by optical/laser barcode scanners.
+    digits_no_spaces = re.sub(r"\s+", "", trimmed)
+    if digits_no_spaces.isdigit() and len(digits_no_spaces) >= 3:
+        trimmed = digits_no_spaces
+
+    if len(trimmed) < 1 or len(trimmed) > 64:
+        raise ValueError("Barcode must be between 1 and 64 characters.")
+
+    # Allow standard printable barcode characters (alphanumeric, hyphens, dots, slashes, colons, hashes, etc.)
+    if not re.match(r"^[A-Za-z0-9\-_.+/:#@$%*&()=\[\] ]+$", trimmed):
+        raise ValueError(
+            "Barcode contains invalid characters. Use alphanumeric characters or standard barcode symbols (- _ . / : # + * $ % & ( ))."
+        )
     return trimmed
 
 
