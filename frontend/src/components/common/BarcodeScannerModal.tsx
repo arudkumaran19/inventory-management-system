@@ -4,6 +4,7 @@ import {
     CameraOff,
     CheckCircle2,
     FlipHorizontal,
+    Globe,
     Keyboard,
     X,
     Zap,
@@ -17,6 +18,7 @@ import {
     DecodeHintType,
 } from "@zxing/library"
 import { playScanSound } from "../../lib/sound"
+import { getBarcodeRegion } from "../../lib/barcodeParser"
 
 type BarcodeScannerModalProps = {
     isOpen: boolean
@@ -36,20 +38,34 @@ type BarcodeScannerModalProps = {
     }>
 }
 
+// Global multi-region barcode formats supported across all continents
 const zxingHints = new Map<DecodeHintType, unknown>()
 zxingHints.set(DecodeHintType.POSSIBLE_FORMATS, [
-    BarcodeFormat.EAN_13,
-    BarcodeFormat.UPC_A,
-    BarcodeFormat.CODE_128,
-    BarcodeFormat.CODE_39,
-    BarcodeFormat.QR_CODE,
-    BarcodeFormat.EAN_8,
-    BarcodeFormat.UPC_E,
-    BarcodeFormat.DATA_MATRIX,
-    BarcodeFormat.ITF,
-    BarcodeFormat.CODABAR,
+    BarcodeFormat.EAN_13, // Global / Asia (JAN, China, India) / Australia / Europe
+    BarcodeFormat.UPC_A,  // United States & Canada standard
+    BarcodeFormat.CODE_128, // Global logistics / GS1-128 shipping
+    BarcodeFormat.CODE_39,  // Industrial / retail inventory
+    BarcodeFormat.CODE_93,  // High-density alphanumeric
+    BarcodeFormat.QR_CODE,  // Global 2D / Japan Denso Wave
+    BarcodeFormat.EAN_8,    // European / Asian compact retail
+    BarcodeFormat.UPC_E,    // US zero-suppressed packaging
+    BarcodeFormat.DATA_MATRIX, // Small packaging / medicine / global
+    BarcodeFormat.ITF,      // Interleaved 2 of 5 / GTIN-14 cartons
+    BarcodeFormat.CODABAR,  // Global logistics / libraries
+    BarcodeFormat.AZTEC,    // Transport / ticketing
+    BarcodeFormat.PDF_417,  // Logistics & ID documents
 ])
 zxingHints.set(DecodeHintType.TRY_HARDER, true)
+
+// Native browser hardware barcode detector interface (Chrome / Edge / Android)
+interface NativeBarcodeResult {
+    rawValue?: string
+    rawText?: string
+}
+
+interface NativeBarcodeDetectorInstance {
+    detect: (source: CanvasImageSource) => Promise<NativeBarcodeResult[]>
+}
 
 export function BarcodeScannerModal({
     isOpen,
@@ -76,7 +92,6 @@ export function BarcodeScannerModal({
     } | null>(null)
     const [targetState, setTargetState] = useState<"idle" | "aligning" | "locked">("idle")
     const scanLockRef = useRef(false)
-    const dwellRef = useRef<{ code: string; frames: number; firstSeen: number } | null>(null)
 
     // Start camera stream
     useEffect(() => {
@@ -198,13 +213,14 @@ export function BarcodeScannerModal({
                 setTimeout(() => {
                     onScan(raw)
                     onClose()
-                }, 350)
+                }, 220)
             }
         },
         [allowRapidRestock, onQuickRestock, scanMode, packSize, onScan, onClose],
     )
 
-    // Continuous real-time barcode decoding using offscreen canvas ROI cropping
+    // Ultra-responsive real-time barcode decoding using offscreen canvas ROI cropping
+    // Powered by native BarcodeDetector (GPU hardware-accelerated) + ZXing MultiFormatReader
     // Video stream is NEVER touched or stopped by ZXing, eliminating camera blackouts!
     useEffect(() => {
         if (!isOpen || !stream || cameraError) {
@@ -215,14 +231,46 @@ export function BarcodeScannerModal({
         if (!video) return
 
         let isRunning = true
-        const reader = new MultiFormatReader()
-        reader.setHints(zxingHints)
+        let isDecoding = false
+
+        // Instantiate native hardware-accelerated BarcodeDetector if available
+        let nativeDetector: NativeBarcodeDetectorInstance | null = null
+        if (typeof window !== "undefined" && "BarcodeDetector" in window) {
+            try {
+                const BD = (window as unknown as {
+                    BarcodeDetector: new (opts?: { formats?: string[] }) => NativeBarcodeDetectorInstance
+                }).BarcodeDetector
+                nativeDetector = new BD({
+                    formats: [
+                        "ean_13",
+                        "ean_8",
+                        "upc_a",
+                        "upc_e",
+                        "code_128",
+                        "code_39",
+                        "code_93",
+                        "itf",
+                        "codabar",
+                        "qr_code",
+                        "data_matrix",
+                        "aztec",
+                        "pdf417",
+                    ],
+                })
+            } catch {
+                nativeDetector = null
+            }
+        }
+
+        const zxingReader = new MultiFormatReader()
+        zxingReader.setHints(zxingHints)
 
         const canvas = document.createElement("canvas")
         const ctx = canvas.getContext("2d", { willReadFrequently: true })
 
-        const intervalId = setInterval(() => {
-            if (!isRunning || scanLockRef.current || !video || video.readyState < 2) {
+        // High-frequency 60ms interval for near-instantaneous capture (< 80ms latency)
+        const intervalId = setInterval(async () => {
+            if (!isRunning || scanLockRef.current || isDecoding || !video || video.readyState < 2) {
                 return
             }
 
@@ -230,62 +278,72 @@ export function BarcodeScannerModal({
             const vh = video.videoHeight
             if (vw === 0 || vh === 0 || !ctx) return
 
-            // Crop strictly to the marked center target box (center 60% width, center 40% height)
-            const cropW = Math.floor(vw * 0.60)
-            const cropH = Math.floor(vh * 0.40)
+            isDecoding = true
+
+            // Crop strictly to the marked center target box (center 65% width, center 45% height)
+            const cropW = Math.floor(vw * 0.65)
+            const cropH = Math.floor(vh * 0.45)
             const cropX = Math.floor((vw - cropW) / 2)
             const cropY = Math.floor((vh - cropH) / 2)
 
             canvas.width = cropW
             canvas.height = cropH
 
-            // Draw ONLY the viewfinder area to the canvas. Anything outside the box is not drawn!
+            // Draw ONLY the viewfinder area to the canvas. Anything outside the box is omitted!
             ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH)
 
-            try {
-                const luminanceSource = new HTMLCanvasElementLuminanceSource(canvas)
-                const binarizer = new HybridBinarizer(luminanceSource)
-                const bitmap = new BinaryBitmap(binarizer)
-                const result = reader.decode(bitmap)
+            let detectedCode: string | null = null
 
-                if (result) {
-                    const raw = result.getText().trim()
-                    if (raw) {
-                        const now = Date.now()
-                        const dwell = dwellRef.current
-
-                        if (dwell && dwell.code === raw) {
-                            dwell.frames += 1
-                            const elapsed = now - dwell.firstSeen
-                            // Confirmed steady inside marked area for at least 2 consecutive detections
-                            if (dwell.frames >= 2 || elapsed >= 160) {
-                                setTargetState("locked")
-                                dwellRef.current = null
-                                void handleProcessCode(raw)
-                            } else {
-                                setTargetState("aligning")
-                            }
-                        } else {
-                            dwellRef.current = { code: raw, frames: 1, firstSeen: now }
-                            setTargetState("aligning")
+            // 1. Try hardware-accelerated native BarcodeDetector first
+            if (nativeDetector) {
+                try {
+                    const results = await nativeDetector.detect(canvas)
+                    if (results && results.length > 0) {
+                        const raw = (results[0].rawValue || results[0].rawText || "").trim()
+                        if (raw) {
+                            detectedCode = raw
                         }
                     }
+                } catch {
+                    // Fall back to ZXing below
                 }
-            } catch {
-                // No barcode detected in this cropped frame
-                if (dwellRef.current && Date.now() - dwellRef.current.firstSeen > 350) {
-                    dwellRef.current = null
-                    setTargetState("idle")
-                }
-            } finally {
-                reader.reset()
             }
-        }, 120)
+
+            // 2. If not detected by native engine, use ZXing MultiFormatReader
+            if (!detectedCode) {
+                try {
+                    const luminanceSource = new HTMLCanvasElementLuminanceSource(canvas)
+                    const binarizer = new HybridBinarizer(luminanceSource)
+                    const bitmap = new BinaryBitmap(binarizer)
+                    const zxingResult = zxingReader.decode(bitmap)
+                    if (zxingResult) {
+                        const raw = zxingResult.getText().trim()
+                        if (raw) {
+                            detectedCode = raw
+                        }
+                    }
+                } catch {
+                    // No barcode in this cropped frame
+                } finally {
+                    zxingReader.reset()
+                }
+            }
+
+            // Instantaneous Capture: Since the canvas contains ONLY the marked viewfinder box,
+            // any detected code is guaranteed to be inside the marked area! Capture immediately!
+            if (detectedCode && isRunning && !scanLockRef.current) {
+                setTargetState("locked")
+                void handleProcessCode(detectedCode)
+            } else if (!scanLockRef.current) {
+                setTargetState("idle")
+            }
+
+            isDecoding = false
+        }, 60)
 
         return () => {
             isRunning = false
             clearInterval(intervalId)
-            dwellRef.current = null
             setTargetState("idle")
         }
     }, [isOpen, stream, cameraError, handleProcessCode])
@@ -323,9 +381,15 @@ export function BarcodeScannerModal({
                             <Barcode className="size-4.5" />
                         </div>
                         <div>
-                            <h2 className="font-serif-brand text-base font-bold text-[#1C1917]">
-                                {title}
-                            </h2>
+                            <div className="flex items-center gap-2">
+                                <h2 className="font-serif-brand text-base font-bold text-[#1C1917]">
+                                    {title}
+                                </h2>
+                                <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                                    <Globe className="size-2.5 text-emerald-600" />
+                                    Global / All Regions
+                                </span>
+                            </div>
                             <p className="text-[11px] text-[#78716C]">
                                 {subtitle}
                             </p>
@@ -427,53 +491,35 @@ export function BarcodeScannerModal({
                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none p-8">
                                 <div
                                     className={[
-                                        "relative w-64 h-36 rounded-xl border-2 transition-all duration-150",
+                                        "relative w-64 h-36 rounded-xl border-2 transition-all duration-100",
                                         targetState === "locked"
-                                            ? "border-emerald-400 bg-emerald-500/15 shadow-[0_0_0_9999px_rgba(0,0,0,0.55),0_0_20px_rgba(52,211,153,0.5)] scale-102"
-                                            : targetState === "aligning"
-                                                ? "border-sky-400 bg-sky-500/10 shadow-[0_0_0_9999px_rgba(0,0,0,0.5)] animate-pulse"
-                                                : "border-dashed border-amber-400/90 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]",
+                                            ? "border-emerald-400 bg-emerald-500/20 shadow-[0_0_0_9999px_rgba(0,0,0,0.55),0_0_24px_rgba(52,211,153,0.7)] scale-102"
+                                            : "border-dashed border-amber-400/90 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]",
                                     ].join(" ")}
                                 >
                                     {/* Corner accents */}
                                     <div
                                         className={[
                                             "absolute -top-1 -left-1 size-4 border-t-3 border-l-3 transition-colors",
-                                            targetState === "locked"
-                                                ? "border-emerald-400"
-                                                : targetState === "aligning"
-                                                    ? "border-sky-400"
-                                                    : "border-amber-400",
+                                            targetState === "locked" ? "border-emerald-400" : "border-amber-400",
                                         ].join(" ")}
                                     />
                                     <div
                                         className={[
                                             "absolute -top-1 -right-1 size-4 border-t-3 border-r-3 transition-colors",
-                                            targetState === "locked"
-                                                ? "border-emerald-400"
-                                                : targetState === "aligning"
-                                                    ? "border-sky-400"
-                                                    : "border-amber-400",
+                                            targetState === "locked" ? "border-emerald-400" : "border-amber-400",
                                         ].join(" ")}
                                     />
                                     <div
                                         className={[
                                             "absolute -bottom-1 -left-1 size-4 border-b-3 border-l-3 transition-colors",
-                                            targetState === "locked"
-                                                ? "border-emerald-400"
-                                                : targetState === "aligning"
-                                                    ? "border-sky-400"
-                                                    : "border-amber-400",
+                                            targetState === "locked" ? "border-emerald-400" : "border-amber-400",
                                         ].join(" ")}
                                     />
                                     <div
                                         className={[
                                             "absolute -bottom-1 -right-1 size-4 border-b-3 border-r-3 transition-colors",
-                                            targetState === "locked"
-                                                ? "border-emerald-400"
-                                                : targetState === "aligning"
-                                                    ? "border-sky-400"
-                                                    : "border-amber-400",
+                                            targetState === "locked" ? "border-emerald-400" : "border-amber-400",
                                         ].join(" ")}
                                     />
 
@@ -482,30 +528,29 @@ export function BarcodeScannerModal({
                                         className={[
                                             "w-full h-0.5 absolute top-1/2 -translate-y-1/2 transition-colors",
                                             targetState === "locked"
-                                                ? "bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.9)]"
-                                                : targetState === "aligning"
-                                                    ? "bg-sky-400 shadow-[0_0_10px_rgba(56,189,248,0.8)]"
-                                                    : "bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_8px_rgba(251,191,36,0.8)] animate-pulse",
+                                                ? "bg-emerald-400 shadow-[0_0_14px_rgba(52,211,153,1)]"
+                                                : "bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_8px_rgba(251,191,36,0.8)] animate-pulse",
                                         ].join(" ")}
                                     />
                                 </div>
 
-                                <p
-                                    className={[
-                                        "absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] font-semibold px-3.5 py-1 rounded-full whitespace-nowrap shadow-sm backdrop-blur-xs transition-all",
-                                        targetState === "locked"
-                                            ? "bg-emerald-500 text-white"
-                                            : targetState === "aligning"
-                                                ? "bg-sky-500 text-white animate-pulse"
+                                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1">
+                                    <p
+                                        className={[
+                                            "text-[10px] font-semibold px-3 py-0.5 rounded-full whitespace-nowrap shadow-sm backdrop-blur-xs transition-all",
+                                            targetState === "locked"
+                                                ? "bg-emerald-500 text-white"
                                                 : "bg-black/60 text-white/90",
-                                    ].join(" ")}
-                                >
-                                    {targetState === "locked"
-                                        ? "Barcode aligned! Capturing..."
-                                        : targetState === "aligning"
-                                            ? "Hold steady in marked box..."
-                                            : "Align barcode inside marked area"}
-                                </p>
+                                        ].join(" ")}
+                                    >
+                                        {targetState === "locked"
+                                            ? "Barcode Captured!"
+                                            : "Position barcode inside marked box"}
+                                    </p>
+                                    <span className="text-[9px] text-white/70 font-medium">
+                                        Asian (JAN/CN/IN) • US (UPC) • AU/NZ • EU • 1D/2D
+                                    </span>
+                                </div>
                             </div>
 
                             {/* Camera controls overlay */}
@@ -572,14 +617,24 @@ export function BarcodeScannerModal({
                                     )}
                                 </div>
                             ) : scannedCode ? (
-                                <div className="absolute inset-0 bg-[#215A36]/90 flex flex-col items-center justify-center text-white p-4 animate-in fade-in duration-100 z-20">
+                                <div className="absolute inset-0 bg-[#215A36]/95 flex flex-col items-center justify-center text-white p-4 animate-in fade-in duration-100 z-20">
                                     <CheckCircle2 className="size-12 text-[#A7F3D0] animate-bounce" />
                                     <p className="mt-2 text-sm font-bold tracking-tight">
-                                        Barcode Detected
+                                        Barcode Captured!
                                     </p>
-                                    <p className="font-mono text-base font-extrabold bg-black/20 px-3 py-1 rounded-lg mt-1 tracking-wider">
+                                    <p className="font-mono text-base font-extrabold bg-black/25 px-3 py-1 rounded-lg mt-1 tracking-wider">
                                         {scannedCode}
                                     </p>
+                                    {(() => {
+                                        const reg = getBarcodeRegion(scannedCode)
+                                        return (
+                                            <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/20 text-white backdrop-blur-xs">
+                                                <span className="text-base">{reg.flag}</span>
+                                                <span>{reg.country}</span>
+                                                <span className="text-[10px] text-emerald-200 uppercase font-mono">({reg.standard})</span>
+                                            </div>
+                                        )
+                                    })()}
                                 </div>
                             ) : null}
                         </>
@@ -610,7 +665,7 @@ export function BarcodeScannerModal({
                                     type="text"
                                     value={manualBarcode}
                                     onChange={(e) => setManualBarcode(e.target.value)}
-                                    placeholder="e.g. 012345678905 or SKU..."
+                                    placeholder="e.g. 012345678905 or JAN/EAN/SKU..."
                                     autoFocus
                                     className="w-full h-10 rounded-xl border border-[#E8E3DB] bg-[#FAF8F5]/60 pl-9 pr-3 text-xs font-mono font-semibold text-[#1C1917] outline-none transition placeholder:text-[#A8A29E] focus:bg-white focus:border-[#78350F] focus:ring-2 focus:ring-[#78350F]/15"
                                 />

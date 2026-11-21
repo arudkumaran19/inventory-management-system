@@ -49,7 +49,7 @@ import { ReceiptModal } from "../orders/ReceiptModal"
 import { BarcodeScannerModal } from "../common/BarcodeScannerModal"
 import { useBarcodeScanner } from "../../hooks/useBarcodeScanner"
 import { playScanSound } from "../../lib/sound"
-import { resolveBarcodeData } from "../../lib/barcodeParser"
+import { resolveBarcodeData, getBarcodeRegion } from "../../lib/barcodeParser"
 import { getCachedProducts, saveCachedProducts } from "../../lib/offlineStore"
 
 const CART_ID_KEY = "pos_cart_id"
@@ -598,8 +598,9 @@ export function POSPage() {
 
                 await addToCart(matchedProduct.id)
                 playScanSound("success")
+                const reg = getBarcodeRegion(matchedProduct.barcode || cleaned)
                 addToast(
-                    `Scanned: ${matchedProduct.name} (${matchedProduct.barcode || cleaned})`,
+                    `Scanned: ${reg.flag} ${matchedProduct.name} (${matchedProduct.barcode || cleaned})`,
                     "success",
                     3000,
                 )

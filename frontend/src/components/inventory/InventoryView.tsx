@@ -21,7 +21,7 @@ import { IngredientsModal } from "./IngredientsModal"
 import { BarcodeScannerModal } from "../common/BarcodeScannerModal"
 import { useBarcodeScanner } from "../../hooks/useBarcodeScanner"
 import { playScanSound } from "../../lib/sound"
-import { resolveBarcodeData } from "../../lib/barcodeParser"
+import { resolveBarcodeData, getBarcodeRegion } from "../../lib/barcodeParser"
 import {
     createProduct,
     deleteProduct,
@@ -1368,8 +1368,20 @@ export function InventoryView() {
                                         className="w-full rounded-xl border border-[#E8E3DB] bg-[#FAF8F5]/60 py-2.5 pl-10 pr-3.5 text-sm font-mono text-[#1C1917] outline-none transition placeholder:text-[#A8A29E] focus:bg-white focus:border-[#78350F] focus:ring-2 focus:ring-[#78350F]/20 disabled:bg-[#F5F2EB]"
                                     />
                                 </div>
+                                {form.barcode.trim() && (() => {
+                                    const reg = getBarcodeRegion(form.barcode)
+                                    return (
+                                        <div className="mt-1.5 flex items-center gap-1.5 text-xs text-[#78716C] animate-in fade-in duration-100">
+                                            <span className="text-sm">{reg.flag}</span>
+                                            <span className="font-semibold text-[#1C1917]">{reg.country}</span>
+                                            <span className="rounded-md bg-[#E8E3DB]/60 px-1.5 py-0.5 text-[10px] font-mono font-bold text-[#78350F]">
+                                                {reg.standard} • {reg.region}
+                                            </span>
+                                        </div>
+                                    )
+                                })()}
                                 <p className="mt-1 text-[11px] text-[#78716C]">
-                                    Supports physical USB/Bluetooth scanners, EAN-13, UPC-A, Code 128. Leading zeros are preserved.
+                                    Supports all regional barcodes (Asian JAN/CN/IN, US/Canada UPC, Australian EAN, European EAN) & 2D QR codes.
                                 </p>
                             </div>
 
