@@ -134,7 +134,27 @@ def upgrade() -> None:
         CREATE OR REPLACE FUNCTION prevent_audit_log_tampering()
         RETURNS TRIGGER AS $$
         BEGIN
-            RAISE EXCEPTION 'audit_logs is an append-only immutable ledger: UPDATE and DELETE operations are strictly forbidden.';
+            IF TG_OP = 'DELETE' THEN
+                RAISE EXCEPTION 'audit_logs is an append-only immutable ledger: UPDATE and DELETE operations are strictly forbidden.';
+            END IF;
+            IF TG_OP = 'UPDATE' THEN
+                IF (OLD.sequence_number = NEW.sequence_number AND
+                    OLD.timestamp = NEW.timestamp AND
+                    OLD.event_type = NEW.event_type AND
+                    OLD.actor_email IS NOT DISTINCT FROM NEW.actor_email AND
+                    OLD.actor_role IS NOT DISTINCT FROM NEW.actor_role AND
+                    OLD.action = NEW.action AND
+                    OLD.resource_type = NEW.resource_type AND
+                    OLD.resource_id IS NOT DISTINCT FROM NEW.resource_id AND
+                    OLD.payload IS NOT DISTINCT FROM NEW.payload AND
+                    OLD.previous_hash = NEW.previous_hash AND
+                    OLD.record_hash = NEW.record_hash AND
+                    NEW.actor_id IS NULL) THEN
+                    RETURN NEW;
+                END IF;
+                RAISE EXCEPTION 'audit_logs is an append-only immutable ledger: UPDATE and DELETE operations are strictly forbidden.';
+            END IF;
+            RETURN NEW;
         END;
         $$ LANGUAGE plpgsql;
 
@@ -154,3 +174,4 @@ def downgrade() -> None:
     op.drop_column('register_shifts', 'location_id')
     op.drop_column('orders', 'location_id')
     op.drop_table('locations')
+

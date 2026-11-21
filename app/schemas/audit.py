@@ -29,3 +29,4 @@ class AuditChainVerificationResponse(BaseModel):
     verified_at: str
     error: str | None = None
     broken_at_id: int | None = None
+

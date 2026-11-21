@@ -28,3 +28,4 @@ class ProductRecipe(Base):
 
     product = relationship("Product", backref="recipe_items")
     ingredient = relationship("Ingredient", back_populates="recipes", lazy="joined")
+

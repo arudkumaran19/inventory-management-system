@@ -24,17 +24,20 @@ import {
 } from "../../lib/api"
 import { ShiftModal } from "./ShiftModal"
 import { AuditTrailModal } from "../audit/AuditTrailModal"
+import type { AppPage } from "./Sidebar"
 
 type TopBarProps = {
     title: string
     cartItemCount?: number
     onMenuClick?: () => void
+    onNavigate?: (page: AppPage) => void
 }
 
 export function TopBar({
     title,
     cartItemCount = 0,
     onMenuClick,
+    onNavigate,
 }: TopBarProps) {
     const { user, logout } = useAuth()
     const [openPanel, setOpenPanel] = useState<
@@ -398,7 +401,11 @@ export function TopBar({
                                             type="button"
                                             onClick={() => {
                                                 setOpenPanel(null)
-                                                setAuditModalOpen(true)
+                                                if (onNavigate) {
+                                                    onNavigate("audit")
+                                                } else {
+                                                    setAuditModalOpen(true)
+                                                }
                                             }}
                                             className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-semibold text-[#1C1917] transition-colors hover:bg-[#FAF8F5] active:scale-[0.98]"
                                         >

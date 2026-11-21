@@ -8,12 +8,14 @@ import { POSPage } from "./components/products/POSPage"
 import { OrderHistory } from "./components/orders/OrderHistory"
 import { InventoryView } from "./components/inventory/InventoryView"
 import { UserManagementView } from "./components/users/UserManagementView"
+import { AuditTrailView } from "./components/audit/AuditTrailView"
 
 const pageTitles: Record<AppPage, string> = {
     pos: "POS",
     orders: "Sales History",
     inventory: "Stock",
     users: "Staff",
+    audit: "Audit Trail",
 }
 
 function AuthenticatedPOS() {
@@ -44,9 +46,9 @@ function AuthenticatedPOS() {
         return <LoginPage />
     }
 
-    // Safety fallback: Cashiers cannot access Inventory or User Management
+    // Safety fallback: Cashiers cannot access Inventory, User Management, or Audit Trail
     const safeActivePage: AppPage =
-        (activePage === "inventory" || activePage === "users") && !isManager
+        (activePage === "inventory" || activePage === "users" || activePage === "audit") && !isManager
             ? "pos"
             : activePage
 
@@ -63,6 +65,9 @@ function AuthenticatedPOS() {
 
             case "users":
                 return isManager ? <UserManagementView /> : <POSPage />
+
+            case "audit":
+                return isManager ? <AuditTrailView /> : <POSPage />
         }
     }
 

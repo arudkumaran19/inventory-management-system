@@ -48,3 +48,4 @@ class RecipeItemResponse(BaseModel):
     quantity: Decimal
     ingredient_name: str | None = None
     ingredient_unit: str | None = None
+

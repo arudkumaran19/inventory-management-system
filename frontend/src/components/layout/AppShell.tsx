@@ -59,6 +59,7 @@ export function AppShell({
                     title={title}
                     cartItemCount={cartItemCount}
                     onMenuClick={() => setMobileSidebarOpen(true)}
+                    onNavigate={handleNavigate}
                 />
 
                 <main className="min-h-0 flex-1 overflow-y-auto">

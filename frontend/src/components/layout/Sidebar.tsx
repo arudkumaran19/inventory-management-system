@@ -2,13 +2,14 @@ import {
     ClipboardList,
     Coffee,
     Package,
+    ShieldCheck,
     ShoppingCart,
     Users,
     X,
 } from "lucide-react"
 import { useAuth } from "../../context/AuthContext"
 
-export type AppPage = "pos" | "orders" | "inventory" | "users"
+export type AppPage = "pos" | "orders" | "inventory" | "users" | "audit"
 
 type SidebarProps = {
     activePage: AppPage
@@ -47,6 +48,13 @@ const navigation: {
         subtitle: "Team accounts & roles",
         page: "users",
         icon: Users,
+        managerOnly: true,
+    },
+    {
+        label: "Audit Trail",
+        subtitle: "Compliance & ledger",
+        page: "audit",
+        icon: ShieldCheck,
         managerOnly: true,
     },
 ]

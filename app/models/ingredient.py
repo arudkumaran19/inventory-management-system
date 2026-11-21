@@ -34,3 +34,4 @@ class Ingredient(Base):
     )
 
     recipes = relationship("ProductRecipe", back_populates="ingredient", cascade="all, delete-orphan")
+

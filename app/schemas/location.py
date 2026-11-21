@@ -26,3 +26,4 @@ class LocationResponse(BaseModel):
     phone: str | None
     is_active: bool
     created_at: datetime
+
