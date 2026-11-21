@@ -15,6 +15,7 @@ type AuthContextType = {
     isLoading: boolean
     isAuthenticated: boolean
     isManager: boolean
+    isAdmin: boolean
     login: (email: string, password: string) => Promise<void>
     logout: () => Promise<void>
     error: string | null
@@ -112,7 +113,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             user,
             isLoading,
             isAuthenticated: !!user,
-            isManager: user?.role === "manager",
+            isManager: user?.role === "manager" || user?.role === "admin",
+            isAdmin: user?.role === "admin",
             login,
             logout,
             error,

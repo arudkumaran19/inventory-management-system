@@ -19,7 +19,7 @@ def get_audit_logs(
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role(UserRole.MANAGER)),
 ):
     stmt = select(AuditLog)
     if event_type:

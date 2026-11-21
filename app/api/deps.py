@@ -48,14 +48,25 @@ def get_current_user(
 
 
 def require_role(*roles: UserRole) -> Callable[[User], User]:
-    """Dependency factory enforcing role-based authorization at the route level."""
-    allowed_values = [r.value for r in roles]
+    """Dependency factory enforcing role-based authorization at the route level.
+    Supports role hierarchy:
+    - UserRole.ADMIN has full system privileges (inherits all MANAGER permissions).
+    - UserRole.MANAGER has operational management privileges.
+    - UserRole.CASHIER has front-of-house register privileges.
+    """
+    allowed_values = {r.value for r in roles}
+    if UserRole.MANAGER.value in allowed_values:
+        allowed_values.add(UserRole.ADMIN.value)
 
     def role_checker(current_user: User = Depends(get_current_user)) -> User:
+        if current_user.role == UserRole.ADMIN.value:
+            return current_user
+
         if current_user.role not in allowed_values:
+            role_names = ", ".join(r.value.capitalize() for r in roles)
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Manager permission required for this action",
+                detail=f"{role_names} permission required for this action",
             )
         return current_user
 

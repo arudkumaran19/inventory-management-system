@@ -8,8 +8,9 @@ from app.db.base import Base
 
 
 class UserRole(str, Enum):
-    CASHIER = "cashier"
+    ADMIN = "admin"
     MANAGER = "manager"
+    CASHIER = "cashier"
 
 
 class User(Base):
@@ -17,7 +18,7 @@ class User(Base):
 
     __table_args__ = (
         CheckConstraint(
-            "role IN ('cashier', 'manager')",
+            "role IN ('admin', 'manager', 'cashier')",
             name="ck_users_role_valid",
         ),
     )

@@ -84,7 +84,7 @@ function formatHandledBy(handler: HandledBy | null | undefined): string {
 
 function formatHandledByWithRole(handler: HandledBy | null | undefined): string {
     if (!handler) return "POS"
-    const role = handler.role.charAt(0).toUpperCase() + handler.role.slice(1)
+    const role = handler.role === "admin" ? "Admin" : handler.role.charAt(0).toUpperCase() + handler.role.slice(1)
     return `${handler.display_name} (${role})`
 }
 
@@ -451,7 +451,7 @@ export function OrderHistory({
                                         <option value="">All Employees</option>
                                         {employees.map((emp) => (
                                             <option key={emp.id} value={emp.id}>
-                                                {emp.display_name} ({emp.role.charAt(0).toUpperCase() + emp.role.slice(1)})
+                                                {emp.display_name} ({emp.role === "admin" ? "Admin" : emp.role.charAt(0).toUpperCase() + emp.role.slice(1)})
                                             </option>
                                         ))}
                                     </select>

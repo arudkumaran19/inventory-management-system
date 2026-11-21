@@ -184,8 +184,14 @@ export function Sidebar({
                         <span className="truncate max-w-[130px] font-medium text-[#1C1917]">
                             {user ? user.display_name : "POS Station"}
                         </span>
-                        <span className="rounded bg-[#F5F1EA] px-1.5 py-0.5 text-[10px] font-bold text-[#57534E] capitalize">
-                            {user ? user.role : "Staff"}
+                        <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold capitalize ${
+                            user?.role === "admin"
+                                ? "bg-purple-100 text-purple-800 border border-purple-200"
+                                : user?.role === "manager"
+                                    ? "bg-[#FEF8EC] text-[#78350F] border border-[#F2DEBA]"
+                                    : "bg-[#F5F1EA] text-[#57534E]"
+                        }`}>
+                            {user ? (user.role === "admin" ? "Administrator" : user.role) : "Staff"}
                         </span>
                     </div>
                 </div>

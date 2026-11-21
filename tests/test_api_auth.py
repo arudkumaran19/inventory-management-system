@@ -14,6 +14,17 @@ client = TestClient(app)
 def get_or_create_test_users():
     db = SessionLocal()
     try:
+        admin = db.query(User).filter(User.email == "test_admin@example.com").first()
+        if not admin:
+            admin = User(
+                email="test_admin@example.com",
+                hashed_password=hash_password("AdminPass1234!"),
+                display_name="Test Administrator",
+                role=UserRole.ADMIN.value,
+                is_active=True,
+            )
+            db.add(admin)
+
         manager = db.query(User).filter(User.email == "test_manager@example.com").first()
         if not manager:
             manager = User(

@@ -240,14 +240,14 @@ def cancel_order(
     order = service.get_order(order_id)
 
     # Authorization enforcement:
-    # 1. Managers have authority to cancel any order (Reserved or Paid).
-    # 2. Refunding a Paid order requires Manager authorization.
+    # 1. Managers and Administrators have authority to cancel any order (Reserved or Paid).
+    # 2. Refunding a Paid order requires Manager or Administrator authorization.
     # 3. Cashiers may only cancel active reservations that they handled.
-    if current_user.role != UserRole.MANAGER.value:
+    if current_user.role not in [UserRole.MANAGER.value, UserRole.ADMIN.value]:
         if order.status == OrderStatus.PAID.value:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Manager permission required to cancel and refund a completed sale.",
+                detail="Manager or Administrator permission required to cancel and refund a completed sale.",
             )
         if order.user_id is not None and order.user_id != current_user.id:
             raise HTTPException(

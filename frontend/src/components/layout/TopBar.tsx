@@ -356,9 +356,11 @@ export function TopBar({
                         >
                             <div className={[
                                 "flex size-6 items-center justify-center rounded-lg text-[10px] font-bold text-white shadow-xs",
-                                user.role === "manager"
-                                    ? "bg-[#78350F]"
-                                    : "bg-[#4E6047]",
+                                user.role === "admin"
+                                    ? "bg-[#6B21A8]"
+                                    : user.role === "manager"
+                                        ? "bg-[#78350F]"
+                                        : "bg-[#4E6047]",
                             ].join(" ")}>
                                 {user.display_name.slice(0, 2).toUpperCase()}
                             </div>
@@ -367,7 +369,7 @@ export function TopBar({
                                     {user.display_name}
                                 </p>
                                 <p className="text-[10px] font-medium text-[#78716C] capitalize">
-                                    {user.role}
+                                    {user.role === "admin" ? "Administrator" : user.role}
                                 </p>
                             </div>
                             <ChevronDown className="size-3 text-[#A8A29E]" />
@@ -385,17 +387,17 @@ export function TopBar({
                                     <div
                                         className="mt-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold capitalize border"
                                         style={{
-                                            backgroundColor: user.role === "manager" ? "#FEF8EC" : "#EDF6EE",
-                                            color: user.role === "manager" ? "#8C4E08" : "#215A36",
-                                            borderColor: user.role === "manager" ? "#F7E0B5" : "#C8E3CE",
+                                            backgroundColor: user.role === "admin" ? "#F3E8FF" : user.role === "manager" ? "#FEF8EC" : "#EDF6EE",
+                                            color: user.role === "admin" ? "#6B21A8" : user.role === "manager" ? "#8C4E08" : "#215A36",
+                                            borderColor: user.role === "admin" ? "#E9D5FF" : user.role === "manager" ? "#F7E0B5" : "#C8E3CE",
                                         }}
                                     >
                                         <Shield className="size-3" />
-                                        {user.role}
+                                        {user.role === "admin" ? "Administrator" : user.role}
                                     </div>
                                 </div>
 
-                                {user.role === "manager" && (
+                                {(user.role === "manager" || user.role === "admin") && (
                                     <div className="pt-2 border-b border-[#E8E3DB] pb-2">
                                         <button
                                             type="button"
